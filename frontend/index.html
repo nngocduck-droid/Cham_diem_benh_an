@@ -580,34 +580,59 @@ function removeFile(i) { selectedFiles.splice(i,1); renderFileList(); }
 // ── Grade ──
 async function chamNhieu() {
   if (!selectedFiles.length) return;
-  showLoading(`Đang chấm ${selectedFiles.length} bệnh án...`, 'AI đang đọc và phân tích từng bệnh án');
   hideAlert();
 
-  const form = new FormData();
-  selectedFiles.forEach(f => form.append('files', f));
+  const allResults = [];
+  const allErrors = [];
 
-  try {
-    const res = await fetch(`${API}/cham-nhieu`, { method:'POST', body:form });
-    if (!res.ok) { const e = await res.json(); throw new Error(e.detail); }
-    const data = await res.json();
-    lastBatchResult = data;
-    lastPlagiarism = data.plagiarism || [];
+  for (let i = 0; i < selectedFiles.length; i++) {
+    const file = selectedFiles[i];
+    showLoading(`Đang chấm ${i + 1}/${selectedFiles.length} bệnh án...`, `Đang xử lý: ${file.name}`);
 
-    renderBatchResults(data);
-    await loadHistory();
+    const form = new FormData();
+    form.append('files', file);
 
-    if (lastPlagiarism.length > 0) {
-      document.getElementById('plagBadge').style.display = 'inline';
-      document.getElementById('statPlag').textContent = lastPlagiarism.length;
+    try {
+      const res = await fetch(`${API}/cham-nhieu`, { method: 'POST', body: form });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({ detail: 'Lỗi server' }));
+        allErrors.push({ file: file.name, loi: e.detail || 'Lỗi không xác định' });
+        continue;
+      }
+      const data = await res.json();
+      allResults.push(...(data.results || []));
+      allErrors.push(...(data.errors || []));
+    } catch(e) {
+      allErrors.push({ file: file.name, loi: e.message });
     }
+  }
 
-    if (data.errors?.length) {
-      showAlert(`⚠️ ${data.errors.length} file lỗi: ${data.errors.map(e=>e.file).join(', ')}`, 'warning');
-    }
-  } catch(e) {
-    showAlert('Lỗi: ' + e.message, 'danger');
-  } finally {
-    hideLoading();
+  // Kiểm tra đạo văn sau khi chấm xong
+  let plagiarism = [];
+  if (allResults.length > 1) {
+    try {
+      showLoading('Đang kiểm tra đạo văn...', '');
+      const res = await fetch(`${API}/kiem-tra-dao-van`, { method: 'POST' });
+      const data = await res.json();
+      plagiarism = data.pairs || [];
+    } catch(e) {}
+  }
+
+  hideLoading();
+
+  lastBatchResult = { results: allResults, plagiarism, tong_so: allResults.length, loi_so: allErrors.length };
+  lastPlagiarism = plagiarism;
+
+  renderBatchResults(lastBatchResult);
+  await loadHistory();
+
+  if (plagiarism.length > 0) {
+    document.getElementById('plagBadge').style.display = 'inline';
+    document.getElementById('statPlag').textContent = plagiarism.length;
+  }
+
+  if (allErrors.length) {
+    showAlert(`⚠️ ${allErrors.length} file lỗi: ${allErrors.map(e => e.file).join(', ')}`, 'warning');
   }
 }
 
