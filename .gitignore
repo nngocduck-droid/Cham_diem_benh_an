@@ -1,0 +1,4 @@
+backend/.env
+backend/lich_su_cham.json
+__pycache__/
+*.pyc

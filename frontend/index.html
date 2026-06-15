@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chấm Điểm Bệnh Án Y Khoa</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --primary-light: #eff6ff;
+  --success: #16a34a;
+  --success-light: #f0fdf4;
+  --warning: #d97706;
+  --warning-light: #fffbeb;
+  --danger: #dc2626;
+  --danger-light: #fef2f2;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --white: #ffffff;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Inter',sans-serif; background:var(--gray-50); color:var(--gray-800); min-height:100vh; }
+
+/* Sidebar */
+.sidebar {
+  position: fixed; left:0; top:0; bottom:0; width:240px;
+  background: var(--gray-900);
+  display: flex; flex-direction: column;
+  z-index: 100;
+}
+.sidebar-logo {
+  padding: 20px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  display: flex; align-items: center; gap: 10px;
+}
+.logo-icon {
+  width:36px; height:36px; background:var(--primary); border-radius:8px;
+  display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0;
+}
+.logo-text { color:white; font-weight:600; font-size:14px; line-height:1.3; }
+.logo-text span { color:var(--gray-400); font-size:11px; font-weight:400; display:block; }
+
+.nav { padding: 12px 8px; flex:1; overflow-y:auto; }
+.nav-label { color:var(--gray-500); font-size:10px; font-weight:600; letter-spacing:1px; text-transform:uppercase; padding:8px 8px 4px; }
+.nav-item {
+  display:flex; align-items:center; gap:10px;
+  padding:9px 10px; border-radius:6px; cursor:pointer;
+  color:var(--gray-400); font-size:13px; font-weight:500;
+  transition:all 0.15s; margin-bottom:2px;
+}
+.nav-item:hover { background:rgba(255,255,255,0.06); color:white; }
+.nav-item.active { background:var(--primary); color:white; }
+.nav-item .icon { font-size:15px; width:20px; text-align:center; flex-shrink:0; }
+.badge {
+  margin-left:auto; background:var(--danger); color:white;
+  font-size:10px; font-weight:700; padding:1px 6px; border-radius:10px;
+}
+
+/* Main */
+.main { margin-left:240px; min-height:100vh; display:flex; flex-direction:column; }
+
+/* Topbar */
+.topbar {
+  background:white; border-bottom:1px solid var(--gray-200);
+  padding:0 24px; height:56px;
+  display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; z-index:50;
+}
+.topbar-title { font-size:15px; font-weight:600; color:var(--gray-800); }
+.topbar-right { display:flex; align-items:center; gap:12px; }
+.topbar-btn {
+  padding:7px 14px; border-radius:6px; font-size:13px; font-weight:500;
+  cursor:pointer; transition:all 0.15s; border:none;
+}
+.btn-primary { background:var(--primary); color:white; }
+.btn-primary:hover { background:var(--primary-dark); }
+.btn-outline { background:white; color:var(--gray-700); border:1px solid var(--gray-300); }
+.btn-outline:hover { background:var(--gray-50); }
+.btn-danger { background:var(--danger); color:white; }
+.btn-danger:hover { background:#b91c1c; }
+
+/* Content */
+.content { padding:24px; flex:1; }
+
+/* Pages */
+.page { display:none; }
+.page.active { display:block; }
+
+/* Stats row */
+.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+.stat-card {
+  background:white; border-radius:var(--radius-lg); padding:20px;
+  border:1px solid var(--gray-200); box-shadow:var(--shadow-sm);
+}
+.stat-label { font-size:12px; color:var(--gray-500); font-weight:500; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px; }
+.stat-value { font-size:28px; font-weight:700; color:var(--gray-900); line-height:1; margin-bottom:4px; }
+.stat-sub { font-size:12px; color:var(--gray-400); }
+.stat-icon { font-size:24px; margin-bottom:8px; }
+
+/* Upload zone */
+.upload-card {
+  background:white; border-radius:var(--radius-lg); border:1px solid var(--gray-200);
+  box-shadow:var(--shadow-sm); overflow:hidden; margin-bottom:24px;
+}
+.card-header {
+  padding:16px 20px; border-bottom:1px solid var(--gray-100);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.card-title { font-size:14px; font-weight:600; color:var(--gray-800); }
+.card-body { padding:20px; }
+
+.drop-zone {
+  border:2px dashed var(--gray-300); border-radius:var(--radius-lg);
+  padding:40px 24px; text-align:center; cursor:pointer;
+  transition:all 0.2s; background:var(--gray-50); position:relative;
+}
+.drop-zone:hover, .drop-zone.drag { border-color:var(--primary); background:var(--primary-light); }
+.drop-zone input { position:absolute; inset:0; opacity:0; cursor:pointer; }
+.drop-icon { font-size:36px; margin-bottom:12px; }
+.drop-title { font-size:14px; font-weight:600; color:var(--gray-700); margin-bottom:4px; }
+.drop-sub { font-size:13px; color:var(--gray-400); }
+
+.file-list { margin-top:16px; display:flex; flex-direction:column; gap:8px; }
+.file-item {
+  display:flex; align-items:center; gap:10px;
+  background:var(--primary-light); border:1px solid #bfdbfe;
+  border-radius:6px; padding:8px 12px;
+}
+.file-item .fname { font-size:13px; color:var(--primary-dark); font-weight:500; flex:1; }
+.file-item .fremove { cursor:pointer; color:var(--gray-400); font-size:16px; line-height:1; }
+.file-item .fremove:hover { color:var(--danger); }
+
+.progress-bar { height:4px; background:var(--gray-200); border-radius:2px; margin-top:8px; overflow:hidden; }
+.progress-fill { height:100%; background:var(--primary); border-radius:2px; transition:width 0.3s; }
+
+/* Table */
+.table-card {
+  background:white; border-radius:var(--radius-lg); border:1px solid var(--gray-200);
+  box-shadow:var(--shadow-sm); overflow:hidden;
+}
+table { width:100%; border-collapse:collapse; }
+thead tr { background:var(--gray-50); border-bottom:1px solid var(--gray-200); }
+th { padding:11px 16px; font-size:11px; font-weight:600; color:var(--gray-500); text-align:left; text-transform:uppercase; letter-spacing:0.5px; white-space:nowrap; }
+td { padding:13px 16px; font-size:13px; color:var(--gray-700); border-bottom:1px solid var(--gray-100); vertical-align:middle; }
+tr:last-child td { border-bottom:none; }
+tr:hover td { background:var(--gray-50); }
+
+.badge-score {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:52px; height:28px; border-radius:6px;
+  font-size:13px; font-weight:700;
+}
+.score-xs { background:#fef2f2; color:#dc2626; }
+.score-tb { background:#fffbeb; color:#d97706; }
+.score-kha { background:#eff6ff; color:#2563eb; }
+.score-gioi { background:#f0fdf4; color:#16a34a; }
+.score-xuat { background:#fdf4ff; color:#9333ea; }
+
+.rank-pill {
+  display:inline-block; padding:2px 8px; border-radius:12px;
+  font-size:11px; font-weight:600;
+}
+
+/* Detail panel */
+.detail-panel {
+  display:none; position:fixed; right:0; top:0; bottom:0; width:480px;
+  background:white; border-left:1px solid var(--gray-200);
+  box-shadow:var(--shadow-lg); z-index:200; overflow-y:auto;
+  flex-direction:column;
+}
+.detail-panel.open { display:flex; }
+.panel-header {
+  padding:16px 20px; border-bottom:1px solid var(--gray-200);
+  display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; background:white; z-index:1;
+}
+.panel-close { cursor:pointer; color:var(--gray-400); font-size:20px; line-height:1; }
+.panel-close:hover { color:var(--gray-700); }
+.panel-body { padding:20px; flex:1; }
+.panel-score-row {
+  background:linear-gradient(135deg,#1d4ed8,#2563eb);
+  border-radius:var(--radius-lg); padding:20px; margin-bottom:20px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.panel-score-num { font-size:42px; font-weight:800; color:white; line-height:1; }
+.panel-score-label { color:rgba(255,255,255,0.7); font-size:12px; margin-top:2px; }
+.panel-rank { background:rgba(255,255,255,0.15); border-radius:6px; padding:6px 14px; color:white; font-weight:600; font-size:13px; }
+
+.section-title { font-size:12px; font-weight:600; color:var(--gray-500); text-transform:uppercase; letter-spacing:0.5px; margin:16px 0 10px; }
+.detail-row {
+  display:flex; align-items:flex-start; gap:12px;
+  padding:10px 0; border-bottom:1px solid var(--gray-100);
+}
+.detail-row:last-child { border-bottom:none; }
+.detail-num { width:24px; height:24px; background:var(--primary-light); color:var(--primary); border-radius:50%; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+.detail-info { flex:1; }
+.detail-name { font-size:13px; font-weight:600; color:var(--gray-800); margin-bottom:3px; }
+.detail-comment { font-size:12px; color:var(--gray-500); line-height:1.5; }
+.detail-score { font-size:14px; font-weight:700; color:var(--primary); white-space:nowrap; }
+.mini-bar { height:3px; background:var(--gray-200); border-radius:2px; margin-top:4px; }
+.mini-fill { height:100%; background:var(--primary); border-radius:2px; }
+
+.comment-box { background:var(--gray-50); border-radius:var(--radius); padding:14px; border:1px solid var(--gray-200); }
+.comment-box p { font-size:13px; color:var(--gray-600); line-height:1.7; }
+
+/* Plagiarism */
+.plag-card {
+  background:white; border-radius:var(--radius-lg); border:1px solid var(--gray-200);
+  box-shadow:var(--shadow-sm); padding:20px; margin-bottom:16px;
+}
+.plag-pair { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+.plag-name { font-size:13px; font-weight:600; color:var(--gray-800); flex:1; background:var(--gray-50); padding:6px 10px; border-radius:6px; }
+.plag-vs { font-size:12px; color:var(--gray-400); font-weight:600; }
+.plag-level { padding:3px 10px; border-radius:12px; font-size:12px; font-weight:600; }
+.plag-high { background:#fef2f2; color:#dc2626; }
+.plag-med { background:#fffbeb; color:#d97706; }
+.plag-details { display:flex; flex-direction:column; gap:4px; }
+.plag-detail-item { font-size:12px; color:var(--gray-600); background:var(--gray-50); padding:4px 10px; border-radius:4px; border-left:3px solid var(--warning); }
+
+.empty-state { text-align:center; padding:60px 24px; color:var(--gray-400); }
+.empty-icon { font-size:48px; margin-bottom:12px; }
+.empty-title { font-size:15px; font-weight:600; margin-bottom:4px; color:var(--gray-500); }
+.empty-sub { font-size:13px; }
+
+/* Overlay */
+.overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.3); z-index:150; }
+.overlay.show { display:block; }
+
+/* Alert */
+.alert { padding:12px 16px; border-radius:var(--radius); font-size:13px; margin-bottom:16px; display:none; }
+.alert.show { display:block; }
+.alert-danger { background:var(--danger-light); border:1px solid #fca5a5; color:var(--danger); }
+.alert-success { background:var(--success-light); border:1px solid #86efac; color:var(--success); }
+
+/* Loading spinner */
+.spinner { width:20px; height:20px; border:2px solid rgba(255,255,255,0.3); border-top-color:white; border-radius:50%; animation:spin 0.7s linear infinite; display:inline-block; vertical-align:middle; margin-right:6px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+.loading-overlay {
+  display:none; position:fixed; inset:0; background:rgba(255,255,255,0.85);
+  z-index:300; flex-direction:column; align-items:center; justify-content:center; gap:16px;
+}
+.loading-overlay.show { display:flex; }
+.loading-spinner { width:48px; height:48px; border:4px solid var(--gray-200); border-top-color:var(--primary); border-radius:50%; animation:spin 0.8s linear infinite; }
+.loading-text { font-size:15px; font-weight:600; color:var(--gray-700); }
+.loading-sub { font-size:13px; color:var(--gray-400); }
+.loading-progress { width:280px; height:4px; background:var(--gray-200); border-radius:2px; overflow:hidden; }
+.loading-progress-fill { height:100%; background:var(--primary); border-radius:2px; animation:progressAnim 2s ease-in-out infinite; }
+@keyframes progressAnim { 0%{width:0%} 50%{width:70%} 100%{width:100%} }
+
+/* Login screen */
+.login-screen {
+  position: fixed; inset: 0; background: linear-gradient(135deg, #0f2744, #1a4a8a);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+.login-box {
+  background: white; border-radius: 16px; padding: 40px;
+  width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  text-align: center;
+}
+.login-icon { font-size: 48px; margin-bottom: 16px; }
+.login-title { font-size: 22px; font-weight: 700; color: var(--gray-900); margin-bottom: 6px; }
+.login-sub { font-size: 13px; color: var(--gray-400); margin-bottom: 28px; }
+.login-input {
+  width: 100%; padding: 12px 16px; border: 1px solid var(--gray-300);
+  border-radius: 8px; font-size: 14px; font-family: Inter, sans-serif;
+  outline: none; margin-bottom: 12px; text-align: center; letter-spacing: 3px;
+}
+.login-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+.login-btn {
+  width: 100%; padding: 13px; background: var(--primary); color: white;
+  border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s; font-family: Inter, sans-serif;
+}
+.login-btn:hover { background: var(--primary-dark); }
+.login-error { color: var(--danger); font-size: 13px; margin-top: 10px; display: none; }
+</style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-icon">🏥</div>
+    <div class="login-title">Chấm Điểm Bệnh Án</div>
+    <div class="login-sub">Nhập mật khẩu để tiếp tục</div>
+    <input type="password" class="login-input" id="loginInput" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter') doLogin()">
+    <button class="login-btn" onclick="doLogin()">Đăng nhập</button>
+    <div class="login-error" id="loginError">Mật khẩu không đúng. Vui lòng thử lại.</div>
+  </div>
+</div>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🏥</div>
+    <div class="logo-text">Bệnh Án AI<span>Y khoa · Phiên bản 2.0</span></div>
+  </div>
+  <nav class="nav">
+    <div class="nav-label">Chính</div>
+    <div class="nav-item active" onclick="showPage('dashboard')">
+      <span class="icon">📊</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="showPage('upload')">
+      <span class="icon">📤</span> Chấm bệnh án
+    </div>
+    <div class="nav-label">Quản lý</div>
+    <div class="nav-item" onclick="showPage('history')">
+      <span class="icon">📋</span> Lịch sử chấm
+    </div>
+    <div class="nav-item" id="navPlag" onclick="showPage('plagiarism')">
+      <span class="icon">🔍</span> Kiểm tra đạo văn
+      <span class="badge" id="plagBadge" style="display:none">!</span>
+    </div>
+  </nav>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">Dashboard</div>
+    <div class="topbar-right">
+      <button class="topbar-btn btn-outline" onclick="reloadPage()">🔄 Làm mới</button>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- DASHBOARD PAGE -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-row" id="statsRow">
+        <div class="stat-card">
+          <div class="stat-icon">📄</div>
+          <div class="stat-label">Tổng bệnh án</div>
+          <div class="stat-value" id="statTotal">0</div>
+          <div class="stat-sub">đã chấm</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📈</div>
+          <div class="stat-label">Điểm trung bình</div>
+          <div class="stat-value" id="statAvg">—</div>
+          <div class="stat-sub">/ 10 điểm</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">✅</div>
+          <div class="stat-label">Tỉ lệ đạt</div>
+          <div class="stat-value" id="statPass">—</div>
+          <div class="stat-sub">≥ 5.0 điểm</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⚠️</div>
+          <div class="stat-label">Nghi vấn đạo văn</div>
+          <div class="stat-value" id="statPlag">0</div>
+          <div class="stat-sub">cặp phát hiện</div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="card-header">
+          <div class="card-title">Bệnh án gần đây</div>
+          <button class="topbar-btn btn-outline" onclick="showPage('history')" style="font-size:12px;padding:5px 10px">Xem tất cả →</button>
+        </div>
+        <table>
+          <thead><tr>
+            <th>File</th><th>Bệnh nhân</th><th>Điểm</th><th>Xếp loại</th><th>Thời gian</th><th></th>
+          </tr></thead>
+          <tbody id="dashboardTable">
+            <tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">Chưa có bệnh án nào</div><div class="empty-sub">Upload bệnh án để bắt đầu</div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- UPLOAD PAGE -->
+    <div class="page" id="page-upload">
+      <div class="upload-card">
+        <div class="card-header">
+          <div class="card-title">Tải lên bệnh án</div>
+          <span style="font-size:12px;color:var(--gray-400)">Hỗ trợ nhiều file PDF cùng lúc</span>
+        </div>
+        <div class="card-body">
+          <div class="drop-zone" id="dropZone">
+            <input type="file" id="fileInput" accept=".pdf" multiple>
+            <div class="drop-icon">📂</div>
+            <div class="drop-title">Kéo thả file PDF vào đây</div>
+            <div class="drop-sub">hoặc nhấn để chọn nhiều file — có thể chọn cả lớp cùng lúc</div>
+          </div>
+          <div class="file-list" id="fileList"></div>
+          <div id="alertBox" class="alert"></div>
+          <div style="margin-top:16px;display:flex;gap:10px;align-items:center">
+            <button class="topbar-btn btn-primary" id="btnGrade" onclick="chamNhieu()" disabled style="padding:10px 20px;font-size:14px">
+              ✦ Chấm điểm tất cả
+            </button>
+            <span style="font-size:12px;color:var(--gray-400)" id="fileCountLabel"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results after grading -->
+      <div id="batchResults" style="display:none">
+        <div class="table-card">
+          <div class="card-header">
+            <div class="card-title" id="batchTitle">Kết quả chấm</div>
+            <button class="topbar-btn btn-primary" id="btnExport" onclick="xuatExcel()" style="font-size:12px;padding:6px 12px">⬇ Xuất Excel</button>
+          </div>
+          <table>
+            <thead><tr>
+              <th>File</th><th>Bệnh nhân</th><th>Điểm</th><th>Xếp loại</th><th></th>
+            </tr></thead>
+            <tbody id="batchTable"></tbody>
+          </table>
+        </div>
+        <div id="plagWarning" style="display:none;margin-top:16px">
+          <div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:var(--radius-lg);padding:16px 20px">
+            <div style="font-weight:600;color:#dc2626;margin-bottom:8px">⚠️ Phát hiện nghi vấn trùng lặp</div>
+            <div id="plagWarningList" style="font-size:13px;color:#7f1d1d"></div>
+            <button onclick="showPage('plagiarism')" style="margin-top:10px;font-size:12px;padding:5px 12px;background:#dc2626;color:white;border:none;border-radius:6px;cursor:pointer">Xem chi tiết →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HISTORY PAGE -->
+    <div class="page" id="page-history">
+      <div class="table-card">
+        <div class="card-header">
+          <div class="card-title">Lịch sử chấm điểm</div>
+          <div style="display:flex;gap:8px">
+            <button class="topbar-btn btn-outline" onclick="loadHistory()" style="font-size:12px;padding:5px 10px">🔄 Làm mới</button>
+            <button class="topbar-btn btn-danger" onclick="xoaLichSu()" style="font-size:12px;padding:5px 10px">🗑 Xoá tất cả</button>
+          </div>
+        </div>
+        <table>
+          <thead><tr>
+            <th>File</th><th>Bệnh nhân</th><th>Tuổi</th><th>Giới</th><th>Điểm</th><th>Xếp loại</th><th>Thời gian</th><th></th>
+          </tr></thead>
+          <tbody id="historyTable">
+            <tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">Chưa có lịch sử</div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PLAGIARISM PAGE -->
+    <div class="page" id="page-plagiarism">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <div>
+          <div style="font-size:16px;font-weight:700;color:var(--gray-900)">Kiểm tra đạo văn</div>
+          <div style="font-size:13px;color:var(--gray-500);margin-top:2px">So sánh tất cả bệnh án trong lịch sử</div>
+        </div>
+        <button class="topbar-btn btn-primary" onclick="kiemTraDaoVan()">🔍 Kiểm tra ngay</button>
+      </div>
+      <div id="plagContent">
+        <div class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <div class="empty-title">Nhấn "Kiểm tra ngay" để bắt đầu</div>
+          <div class="empty-sub">Hệ thống sẽ so sánh tất cả bệnh án đã chấm</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Detail panel overlay -->
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+<div class="detail-panel" id="detailPanel">
+  <div class="panel-header">
+    <div style="font-size:14px;font-weight:600" id="panelTitle">Chi tiết</div>
+    <div class="panel-close" onclick="closePanel()">✕</div>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+</div>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loadingText">Đang chấm điểm...</div>
+  <div class="loading-sub" id="loadingSub">AI đang đọc và phân tích bệnh án</div>
+  <div class="loading-progress"><div class="loading-progress-fill"></div></div>
+</div>
+
+<script>;
+const API = 'https://benh-an-app-production.up.railway.app';
+let allHistory = [];
+let lastBatchResult = null;
+let lastPlagiarism = [];
+
+// ── Đăng nhập ──
+async function doLogin() {
+  const pw = document.getElementById('loginInput').value;
+  if (!pw) return;
+  try {
+    const res = await fetch(`${API}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw })
+    });
+    if (res.ok) {
+      sessionStorage.setItem('auth', pw);
+      document.getElementById('loginScreen').style.display = 'none';
+    } else {
+      document.getElementById('loginError').style.display = 'block';
+      document.getElementById('loginInput').value = '';
+    }
+  } catch(e) {
+    document.getElementById('loginError').textContent = 'Không kết nối được server.';
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+// Kiểm tra đã đăng nhập chưa
+if (sessionStorage.getItem('auth')) {
+  document.getElementById('loginScreen').style.display = 'none';
+}
+
+// ── Navigation ──
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const titles = { dashboard:'Dashboard', upload:'Chấm bệnh án', history:'Lịch sử chấm', plagiarism:'Kiểm tra đạo văn' };
+  document.getElementById('topbarTitle').textContent = titles[name] || '';
+  const navMap = { dashboard:0, upload:1, history:2, plagiarism:3 };
+  document.querySelectorAll('.nav-item')[navMap[name]]?.classList.add('active');
+  if (name === 'history') renderHistory();
+  if (name === 'dashboard') renderDashboard();
+}
+
+// ── File handling ──
+let selectedFiles = [];
+const fileInput = document.getElementById('fileInput');
+const dropZone = document.getElementById('dropZone');
+
+fileInput.addEventListener('change', e => addFiles(Array.from(e.target.files)));
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag'); addFiles(Array.from(e.dataTransfer.files)); });
+
+function addFiles(files) {
+  const pdfs = files.filter(f => f.name.endsWith('.pdf'));
+  pdfs.forEach(f => { if (!selectedFiles.find(x => x.name === f.name)) selectedFiles.push(f); });
+  renderFileList();
+}
+
+function renderFileList() {
+  const list = document.getElementById('fileList');
+  list.innerHTML = selectedFiles.map((f,i) => `
+    <div class="file-item">
+      <span>📄</span>
+      <span class="fname">${f.name}</span>
+      <span class="fremove" onclick="removeFile(${i})">✕</span>
+    </div>`).join('');
+  document.getElementById('btnGrade').disabled = selectedFiles.length === 0;
+  document.getElementById('fileCountLabel').textContent = selectedFiles.length > 0 ? `${selectedFiles.length} file đã chọn` : '';
+}
+
+function removeFile(i) { selectedFiles.splice(i,1); renderFileList(); }
+
+// ── Grade ──
+async function chamNhieu() {
+  if (!selectedFiles.length) return;
+  showLoading(`Đang chấm ${selectedFiles.length} bệnh án...`, 'AI đang đọc và phân tích từng bệnh án');
+  hideAlert();
+
+  const form = new FormData();
+  selectedFiles.forEach(f => form.append('files', f));
+
+  try {
+    const res = await fetch(`${API}/cham-nhieu`, { method:'POST', body:form });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.detail); }
+    const data = await res.json();
+    lastBatchResult = data;
+    lastPlagiarism = data.plagiarism || [];
+
+    renderBatchResults(data);
+    await loadHistory();
+
+    if (lastPlagiarism.length > 0) {
+      document.getElementById('plagBadge').style.display = 'inline';
+      document.getElementById('statPlag').textContent = lastPlagiarism.length;
+    }
+
+    if (data.errors?.length) {
+      showAlert(`⚠️ ${data.errors.length} file lỗi: ${data.errors.map(e=>e.file).join(', ')}`, 'warning');
+    }
+  } catch(e) {
+    showAlert('Lỗi: ' + e.message, 'danger');
+  } finally {
+    hideLoading();
+  }
+}
+
+function renderBatchResults(data) {
+  const tbody = document.getElementById('batchTable');
+  tbody.innerHTML = (data.results || []).map((r, idx) => {
+    const bn = r.benh_nhan || {};
+    return `<tr>
+      <td style="font-weight:500">${r.ten_file}</td>
+      <td>${bn.ho_ten || '—'}</td>
+      <td><span class="badge-score ${scoreClass(r.tong_diem)}">${r.tong_diem?.toFixed(2)}</span></td>
+      <td><span class="rank-pill" style="${rankStyle(r.xep_loai)}">${r.xep_loai}</span></td>
+      <td><button onclick='openPanelByIndex("batch",${idx})' style="font-size:12px;padding:4px 10px;border:1px solid var(--gray-300);border-radius:5px;cursor:pointer;background:white">Chi tiết</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:24px">Không có kết quả</td></tr>';
+
+  document.getElementById('batchTitle').textContent = `Kết quả chấm — ${data.tong_so} bệnh án`;
+  document.getElementById('batchResults').style.display = 'block';
+  document.getElementById('batchResults').scrollIntoView({ behavior:'smooth' });
+
+  // Plagiarism warning
+  if (data.plagiarism?.length > 0) {
+    const pw = document.getElementById('plagWarning');
+    pw.style.display = 'block';
+    document.getElementById('plagWarningList').innerHTML = data.plagiarism.map(p =>
+      `<div style="margin-bottom:4px">• <strong>${p.sv1}</strong> ↔ <strong>${p.sv2}</strong>: ${p.muc_do} (${p.do_tuong_dong}% tương đồng)</div>`
+    ).join('');
+  }
+}
+
+// ── History ──
+async function loadHistory() {
+  try {
+    const res = await fetch(`${API}/lich-su`);
+    allHistory = await res.json();
+    renderDashboard();
+    renderHistory();
+  } catch(e) { console.error(e); }
+}
+
+function renderHistory() {
+  const tbody = document.getElementById('historyTable');
+  if (!allHistory.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">Chưa có lịch sử</div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = [...allHistory].reverse().map((r, idx) => {
+    const bn = r.benh_nhan || {};
+    return `<tr>
+      <td style="font-weight:500;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.ten_file}</td>
+      <td>${bn.ho_ten || '—'}</td>
+      <td>${bn.tuoi || '—'}</td>
+      <td>${bn.gioi || '—'}</td>
+      <td><span class="badge-score ${scoreClass(r.tong_diem)}">${r.tong_diem?.toFixed(2)}</span></td>
+      <td><span class="rank-pill" style="${rankStyle(r.xep_loai)}">${r.xep_loai}</span></td>
+      <td style="color:var(--gray-400);font-size:12px">${r.thoi_gian}</td>
+      <td><button onclick='openPanelByIndex("history",${idx})' style="font-size:12px;padding:4px 10px;border:1px solid var(--gray-300);border-radius:5px;cursor:pointer;background:white">Chi tiết</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderDashboard() {
+  document.getElementById('statTotal').textContent = allHistory.length;
+  if (allHistory.length) {
+    const avg = allHistory.reduce((s,r) => s + (r.tong_diem||0), 0) / allHistory.length;
+    const pass = allHistory.filter(r => (r.tong_diem||0) >= 5).length;
+    document.getElementById('statAvg').textContent = avg.toFixed(2);
+    document.getElementById('statPass').textContent = Math.round(pass/allHistory.length*100) + '%';
+  }
+
+  const tbody = document.getElementById('dashboardTable');
+  const recent = [...allHistory].reverse().slice(0,5);
+  if (!recent.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">Chưa có bệnh án nào</div><div class="empty-sub">Upload bệnh án để bắt đầu</div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = recent.map((r, idx) => {
+    const bn = r.benh_nhan || {};
+    return `<tr>
+      <td style="font-weight:500">${r.ten_file}</td>
+      <td>${bn.ho_ten || '—'}</td>
+      <td><span class="badge-score ${scoreClass(r.tong_diem)}">${r.tong_diem?.toFixed(2)}</span></td>
+      <td><span class="rank-pill" style="${rankStyle(r.xep_loai)}">${r.xep_loai}</span></td>
+      <td style="color:var(--gray-400);font-size:12px">${r.thoi_gian}</td>
+      <td><button onclick='openPanelByIndex("dashboard",${idx})' style="font-size:12px;padding:4px 10px;border:1px solid var(--gray-300);border-radius:5px;cursor:pointer;background:white">Chi tiết</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function xoaLichSu() {
+  if (!confirm('Bạn có chắc muốn xoá toàn bộ lịch sử chấm điểm?')) return;
+  await fetch(`${API}/lich-su`, { method:'DELETE' });
+  allHistory = [];
+  renderHistory();
+  renderDashboard();
+}
+
+// ── Plagiarism ──
+async function kiemTraDaoVan() {
+  showLoading('Đang kiểm tra đạo văn...', 'So sánh tất cả cặp bệnh án trong lịch sử');
+  try {
+    const res = await fetch(`${API}/kiem-tra-dao-van`, { method:'POST' });
+    const data = await res.json();
+    renderPlagiarism(data.pairs || []);
+    document.getElementById('statPlag').textContent = (data.pairs||[]).length;
+    if ((data.pairs||[]).length > 0) document.getElementById('plagBadge').style.display = 'inline';
+    else document.getElementById('plagBadge').style.display = 'none';
+  } catch(e) {
+    document.getElementById('plagContent').innerHTML = `<div class="alert alert-danger show">Lỗi: ${e.message}</div>`;
+  } finally {
+    hideLoading();
+  }
+}
+
+function renderPlagiarism(pairs) {
+  const el = document.getElementById('plagContent');
+  if (!pairs.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">Không phát hiện trùng lặp</div><div class="empty-sub">Tất cả bệnh án đều độc lập</div></div>`;
+    return;
+  }
+  el.innerHTML = `<div style="margin-bottom:16px;font-size:13px;color:var(--danger);font-weight:600">⚠️ Phát hiện ${pairs.length} cặp nghi vấn trùng lặp</div>` +
+    pairs.map(p => `
+    <div class="plag-card">
+      <div class="plag-pair">
+        <div class="plag-name">📄 ${p.sv1}</div>
+        <div class="plag-vs">↔</div>
+        <div class="plag-name">📄 ${p.sv2}</div>
+        <span class="plag-level ${p.do_tuong_dong > 75 ? 'plag-high':'plag-med'}">${p.muc_do}</span>
+      </div>
+      <div style="font-size:12px;color:var(--gray-500);margin-bottom:8px">Độ tương đồng nội dung: <strong>${p.do_tuong_dong}%</strong></div>
+      <div class="plag-details">
+        ${p.chi_tiet.map(d => `<div class="plag-detail-item">⚠ ${d}</div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+// ── Export ──
+async function xuatExcel() {
+  if (!lastBatchResult) return;
+  showLoading('Đang tạo file Excel...', '');
+  try {
+    const payload = { results: lastBatchResult.results, plagiarism: lastPlagiarism };
+    const res = await fetch(`${API}/xuat-excel-nhieu`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    if (!res.ok) throw new Error('Lỗi xuất file');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href=url;
+    a.download = `KetQua_BenhAn_${new Date().toLocaleDateString('vi').replace(/\//g,'')}.xlsx`;
+    a.click(); URL.revokeObjectURL(url);
+  } catch(e) { showAlert('Lỗi xuất Excel: ' + e.message, 'danger'); }
+  finally { hideLoading(); }
+}
+
+// ── Detail Panel ──
+function openPanel(r) {
+  const bn = r.benh_nhan || {};
+  document.getElementById('panelTitle').textContent = r.ten_file;
+  document.getElementById('panelBody').innerHTML = `
+    <div class="panel-score-row">
+      <div>
+        <div class="panel-score-num">${r.tong_diem?.toFixed(2)}</div>
+        <div class="panel-score-label">/ 10 điểm</div>
+      </div>
+      <div style="text-align:right">
+        <div class="panel-rank">${r.xep_loai}</div>
+        <div style="color:rgba(255,255,255,0.6);font-size:11px;margin-top:6px">${r.thoi_gian||''}</div>
+      </div>
+    </div>
+    <div class="section-title">Thông tin bệnh nhân</div>
+    <div class="comment-box" style="margin-bottom:16px">
+      <p>👤 ${bn.ho_ten||'—'} &nbsp;|&nbsp; 🎂 ${bn.tuoi||'—'} tuổi &nbsp;|&nbsp; ${bn.gioi||'—'} &nbsp;|&nbsp; Mã: ${bn.ma_benh_nhan||'—'}</p>
+    </div>
+    <div class="section-title">Điểm chi tiết</div>
+    ${(r.chi_tiet||[]).map(item => {
+      const pct = item.diem_toi_da > 0 ? Math.round(item.diem_dat/item.diem_toi_da*100) : 0;
+      return `<div class="detail-row">
+        <div class="detail-num">${item.stt}</div>
+        <div class="detail-info">
+          <div class="detail-name">${item.ten_muc}</div>
+          <div class="detail-comment">${item.nhan_xet}</div>
+          <div class="mini-bar"><div class="mini-fill" style="width:${pct}%"></div></div>
+        </div>
+        <div class="detail-score">${item.diem_dat?.toFixed(2)}<span style="font-size:11px;color:var(--gray-400)">/${item.diem_toi_da}</span></div>
+      </div>`;
+    }).join('')}
+    <div class="section-title">Nhận xét tổng thể</div>
+    <div class="comment-box"><p>${r.nhan_xet_chung||'—'}</p></div>
+    ${(r.cac_phan_can_sua||[]).length > 0 ? `
+    <div class="section-title" style="color:#dc2626">Các phần cần sửa</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${(r.cac_phan_can_sua||[]).map((s,i) => `
+      <div style="display:flex;align-items:flex-start;gap:8px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:9px 12px">
+        <span style="color:#dc2626;font-weight:700;font-size:12px;flex-shrink:0;margin-top:1px">${i+1}.</span>
+        <span style="font-size:13px;color:#7f1d1d;line-height:1.5">${s}</span>
+      </div>`).join('')}
+    </div>` : ''}
+  `;
+  document.getElementById('detailPanel').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+}
+
+function closePanel() {
+  document.getElementById('detailPanel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+// ── Helpers ──
+function scoreClass(s) {
+  if (s >= 9) return 'score-xuat';
+  if (s >= 8) return 'score-gioi';
+  if (s >= 6.5) return 'score-kha';
+  if (s >= 5) return 'score-tb';
+  return 'score-xs';
+}
+function rankStyle(r) {
+  const map = { 'Xuất sắc':'background:#fdf4ff;color:#9333ea', 'Giỏi':'background:#f0fdf4;color:#16a34a',
+    'Khá':'background:#eff6ff;color:#2563eb', 'Trung bình':'background:#fffbeb;color:#d97706', 'Yếu':'background:#fef2f2;color:#dc2626' };
+  return map[r] || '';
+}
+function showLoading(text, sub) {
+  document.getElementById('loadingText').textContent = text;
+  document.getElementById('loadingSub').textContent = sub;
+  document.getElementById('loadingOverlay').classList.add('show');
+}
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('show'); }
+function showAlert(msg, type) {
+  const el = document.getElementById('alertBox');
+  el.className = `alert alert-${type} show`;
+  el.textContent = msg;
+}
+function hideAlert() {
+  document.getElementById('alertBox').classList.remove('show');
+}
+
+// ── Reload stay on page ──
+function reloadPage() {
+  const pages = ['dashboard','upload','history','plagiarism'];
+  let current = 'dashboard';
+  pages.forEach(p => { if (document.getElementById('page-'+p)?.classList.contains('active')) current = p; });
+  sessionStorage.setItem('currentPage', current);
+  location.reload();
+}
+
+// ── Panel by index ──
+let batchResultsCache = [];
+function openPanelByIndex(source, idx) {
+  let r = null;
+  if (source === 'batch' && lastBatchResult) {
+    r = lastBatchResult.results[idx];
+  } else if (source === 'history') {
+    r = [...allHistory].reverse()[idx];
+  } else if (source === 'dashboard') {
+    r = [...allHistory].reverse().slice(0,5)[idx];
+  }
+  if (r) openPanel(r);
+}
+
+// Init
+const savedPage = sessionStorage.getItem('currentPage');
+if (savedPage) { sessionStorage.removeItem('currentPage'); showPage(savedPage); }
+loadHistory();
+</script>
+</body>
+</html>
