@@ -1,4 +1,4 @@
-# Hướng dẫn cấu hình: Tài khoản, Email & Quản trị
+# Hướng dẫn cập nhật: Tài khoản, Email & Quản trị (chỉ dùng Railway)
 
 Phiên bản này thêm:
 
@@ -16,67 +16,93 @@ Ngoài ra:
 - **Sửa lỗi kiểm tra đạo văn:** bản cũ coi hai bệnh án cùng ghi mã bệnh nhân “Không có”/“N/A” là *cùng bệnh nhân* → với 46 bệnh án mẫu, bản cũ báo 366 cặp nghi vấn; sau khi sửa còn 90 cặp (chủ yếu là nhiều sinh viên cùng làm bệnh án trên một bệnh nhân). Nay các giá trị kiểu “Không có” được bỏ qua, và tên giống nhau nhưng tuổi khác nhau không còn bị coi là cùng bệnh nhân.
 - **Bảo mật hiển thị:** tên file, họ tên và nhận xét của AI được hiển thị dạng chữ thuần, nên một tên file hay nội dung PDF có chèn mã HTML/JavaScript không thể chạy trên trình duyệt người xem (quan trọng khi admin xem bệnh án của người khác).
 
+## Địa chỉ app – chỉ dùng Railway
+
+Từ phiên bản này app **chỉ chạy trên Railway**: **https://chamdiembenhan-production.up.railway.app**
+(kiểm tra lại địa chỉ đầy đủ: Railway → service **Cham_diem_benh_an** → **Settings** → **Networking**).
+
+Server Railway đã có sẵn toàn bộ giao diện, nên không cần Netlify nữa. File `frontend/index.html` giờ chỉ là trang **tự chuyển sang địa chỉ Railway**, để ai còn giữ link Netlify cũ vẫn vào được app (xem Bước 6).
+
 ---
 
-## Bước 1. Gắn Volume trên Railway (bắt buộc)
+## Bước 1. Brevo – lấy API key gửi email (miễn phí)
 
-Tài khoản và lịch sử được lưu trong file CSDL SQLite. **Ổ đĩa của Railway bị xoá mỗi lần deploy**, nên phải gắn Volume, nếu không mọi tài khoản sẽ mất sau mỗi lần cập nhật.
-
-1. Mở project trên Railway → bấm chuột phải vào service backend (hoặc **+ New → Volume**).
-2. Chọn service backend, đặt **Mount path** là `/data`.
-3. Không cần đặt thêm biến nào: Railway tự cung cấp `RAILWAY_VOLUME_MOUNT_PATH` và app tự dùng thư mục đó.
-
-> Nếu quên bước này, log khi khởi động sẽ có dòng cảnh báo `⚠️ Chưa gắn Volume trên Railway`.
-
-## Bước 2. Tạo tài khoản gửi email Brevo (miễn phí)
-
-Railway **chặn cổng SMTP** ở gói Free/Trial/Hobby, nên không gửi trực tiếp qua Gmail được. App gửi qua API HTTPS của Brevo (gói miễn phí: 300 email/ngày).
+Railway **chặn cổng SMTP** ở gói Free/Trial/Hobby (gói 5 USD/tháng là Hobby), nên app gửi email qua API HTTPS của Brevo (miễn phí 300 email/ngày).
 
 1. Đăng ký tại https://www.brevo.com.
-2. Vào **Senders, Domains & Dedicated IPs → Senders → Add a sender**, nhập email dùng để gửi (vd. Gmail của bạn) và bấm link xác minh Brevo gửi tới email đó.
-3. Vào **SMTP & API → API Keys → Generate a new API key**, sao chép key (bắt đầu bằng `xkeysib-...`).
+2. **Xác minh địa chỉ gửi:** vào **Senders, Domains & Dedicated IPs → Senders → Add a sender**, nhập email dùng để gửi (vd. Gmail của bạn) rồi bấm link xác minh Brevo gửi tới email đó.
+3. **Tạo API key:** mở https://app.brevo.com/settings/keys/api (hoặc bấm tên tài khoản → **Settings → SMTP & API → API Keys & MCP**) → **Generate a new API key**:
+   - **Access:** chọn **Restricted**.
+   - **Permissions:** **Transactional email = All**; tất cả các dòng khác để **None**.
+   - Không bật “Create MCP server API key”.
+   - Bấm **Generate**, sao chép key ngay (bắt đầu bằng `xkeysib-…`; chỉ hiện một lần). Lấy ở tab *API keys*, không phải *SMTP*.
+4. **Tắt chặn IP lạ:** tên tài khoản → **Settings → Security → Authorized IPs** → nếu đang *Activated* thì bấm **Deactivate blocking**. Lý do: địa chỉ IP của Railway thay đổi sau mỗi lần deploy, còn Brevo tự bật chặn IP lạ sau 30 ngày → email sẽ đột nhiên ngừng gửi.
 
-> Email gửi từ địa chỉ @gmail.com qua dịch vụ trung gian đôi khi rơi vào mục Spam ở lần đầu. Nếu trường có tên miền riêng (vd. @hmu.edu.vn) và bạn xác minh được tên miền đó trong Brevo, email sẽ vào hộp thư chính tốt hơn.
+> - Email gửi “từ” một địa chỉ @gmail.com qua Brevo đôi khi rơi vào mục Spam. Nếu có tên miền riêng và xác minh được trong Brevo, email sẽ vào hộp thư chính tốt hơn.
+> - Brevo vô hiệu hoá key nếu **90 ngày** không có lần gửi nào (vd. nghỉ hè không ai dùng app). Khi đó tạo key mới và thay `BREVO_API_KEY` trên Railway.
 
-*Cách khác:* nếu dùng Railway gói Pro hoặc chạy trên máy riêng, có thể dùng SMTP của Gmail (`SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`, `SMTP_USER`, `SMTP_PASSWORD` là *App Password* 16 ký tự). Xem `backend/.env.example`.
+## Bước 2. Railway – kiểm tra Volume (nơi lưu tài khoản & lịch sử)
 
-## Bước 3. Đặt biến môi trường trên Railway
+Ổ đĩa của Railway bị xoá mỗi lần deploy, nên dữ liệu phải nằm trên Volume. Service **Cham_diem_benh_an** **đã có sẵn** Volume `cham_diem_benh_an-volume` (dòng nằm ngay dưới ô service) → không cần tạo thêm.
 
-Service backend → **Variables** → thêm:
+- Đường dẫn (*mount path*) của Volume là gì cũng được: Railway tự báo cho app qua biến `RAILWAY_VOLUME_MOUNT_PATH`, app tự lưu vào đó. **Không** cần đặt `DATA_DIR`.
+- Nếu một ngày Volume bị gỡ, log khi khởi động sẽ có dòng cảnh báo `⚠️ Chưa gắn Volume trên Railway`.
 
-| Biến | Giá trị | Ghi chú |
-|---|---|---|
-| `BREVO_API_KEY` | key ở bước 2 | |
-| `MAIL_FROM` | email đã xác minh trong Brevo | phải khớp sender đã xác minh |
-| `MAIL_FROM_NAME` | `Chấm Bệnh Án AI` | tuỳ chọn |
-| `SECRET_KEY` | chuỗi ngẫu nhiên dài | tạo bằng `python3 -c "import secrets; print(secrets.token_urlsafe(48))"`. Đổi giá trị này thì mọi người phải đăng nhập lại |
-| `APP_BASE_URL` | `https://benh-an-app-production.up.railway.app` | địa chỉ dùng trong link email |
-| `ADMIN_EMAILS` | email của bạn | **admin gốc**; nhiều email cách nhau bởi dấu phẩy. Lịch sử chấm cũ (nếu còn) thuộc admin gốc đăng nhập đầu tiên |
-| `REGISTRATION_CODE` | mã bạn muốn | tuỳ chọn, xem bên dưới |
-| `ALLOWED_EMAIL_DOMAINS` | vd. `hmu.edu.vn` | tuỳ chọn: chỉ cho đăng ký bằng email thuộc tên miền này |
+## Bước 3. Railway – đặt biến môi trường
+
+Bấm vào ô **Cham_diem_benh_an** → tab **Variables** → **Raw Editor** → **giữ nguyên** các dòng đang có (`GEMINI_API_KEY`, `APP_PASSWORD`…) và **thêm** các dòng sau:
+
+```
+BREVO_API_KEY=xkeysib-...(key ở bước 1)
+MAIL_FROM=(email đã xác minh trong Brevo – Senders)
+MAIL_FROM_NAME=Chấm Bệnh Án AI
+SECRET_KEY=(chuỗi ngẫu nhiên – xem dưới)
+APP_BASE_URL=https://chamdiembenhan-production.up.railway.app
+ADMIN_EMAILS=(email bạn sẽ dùng làm admin)
+```
+
+| Biến | Ý nghĩa |
+|---|---|
+| `BREVO_API_KEY`, `MAIL_FROM` | gửi email qua Brevo; `MAIL_FROM` phải trùng sender đã xác minh |
+| `SECRET_KEY` | khoá ký phiên đăng nhập và link email. Tạo trên Mac: mở **Terminal**, gõ `openssl rand -base64 48`. Đổi giá trị này thì mọi người phải đăng nhập lại |
+| `APP_BASE_URL` | địa chỉ app dùng trong link xác nhận / đặt lại mật khẩu – phải đúng địa chỉ Railway ở trên |
+| `ADMIN_EMAILS` | **admin gốc** (nhiều email cách nhau dấu phẩy) |
+| `REGISTRATION_CODE` | *(tuỳ chọn)* mã đăng ký, xem dưới |
+| `ALLOWED_EMAIL_DOMAINS` | *(tuỳ chọn)* chỉ cho đăng ký bằng email thuộc tên miền này, vd. `hmu.edu.vn` |
+
+Sau khi sửa, Railway hiện nút **Deploy** (hoặc *Apply changes*) phía trên → bấm để áp dụng.
 
 **Mã đăng ký:** để người lạ không tự tạo tài khoản và dùng hết hạn mức Gemini, app yêu cầu **mã đăng ký** khi đăng ký.
 - Mặc định, mã đăng ký chính là `APP_PASSWORD` (mật khẩu chung đang dùng). Bạn chỉ cần báo mã này cho đồng nghiệp như trước.
 - Đặt `REGISTRATION_CODE=...` để dùng mã khác, hoặc `REGISTRATION_CODE=off` để ai cũng đăng ký được (vẫn phải xác nhận email).
 
-## Bước 4. Deploy
+## Bước 4. Đưa code lên GitHub (Railway tự deploy)
+
+Làm **sau** bước 1–3. Mở **Terminal** trên Mac:
 
 ```bash
 cd ~/Documents/benh-an-app-v2
-git add backend frontend HUONG_DAN_CAU_HINH.md .gitignore
-git commit -m "Thêm tài khoản, xác nhận email, đổi mật khẩu, gửi Excel qua email, trang quản trị"
+git add HUONG_DAN_CAU_HINH.md frontend/index.html backend/.env.example
+git commit -m "Chỉ dùng Railway: hướng dẫn cấu hình, chuyển hướng bản Netlify"
 git push
 ```
 
+- Service **Cham_diem_benh_an** nối với repo GitHub `Cham_diem_benh_an`, nên mỗi lần `git push` Railway tự build và deploy (theo dõi ở tab **Deployments**, chờ trạng thái thành công).
 - Railway tự cài thêm thư viện `itsdangerous` (đã có trong `requirements.txt`).
-- Nếu dùng bản Netlify, deploy lại thư mục `frontend/` (file `frontend/index.html` giống `backend/static/index.html`, chỉ khác dòng địa chỉ API).
-- **Nên đặt biến môi trường và gắn Volume trước khi push**, để ngay khi bản mới chạy thì đăng ký và gửi email hoạt động.
 
 ## Bước 5. Kiểm tra
 
-1. Mở `https://<app>/health` → thấy `"email":"brevo"` là đã nhận cấu hình email.
-2. Đăng ký tài khoản bằng email của bạn (trùng `ADMIN_EMAILS`) → nhận email → bấm **Xác nhận email** → menu bên trái có mục **🛡️ Quản trị**.
+1. Mở https://chamdiembenhan-production.up.railway.app/health → thấy `"email":"brevo"` là đã nhận cấu hình email.
+2. Mở app → **Đăng ký** bằng email trong `ADMIN_EMAILS` (mã đăng ký = `APP_PASSWORD`) → nhận email → bấm **Xác nhận email** → menu trái có mục **🛡️ Quản trị**.
 3. Chấm thử 1–2 bệnh án → kiểm tra hộp thư có email “Kết quả chấm bệnh án” kèm file Excel.
+4. Nếu màn hình báo lỗi kiểu *“Dịch vụ email từ chối (401): …”* → xem lại API key / quyền *Transactional email* / sender ở bước 1.
+
+## Bước 6. Ngừng dùng Netlify
+
+- `frontend/index.html` giờ chỉ tự chuyển người dùng sang địa chỉ Railway.
+  - Nếu site Netlify tự deploy từ GitHub: sau `git push` ở bước 4, link Netlify cũ sẽ tự chuyển sang Railway.
+  - Nếu trước đây bạn kéo-thả thư mục lên Netlify: kéo-thả lại thư mục `frontend` một lần, **hoặc** xoá luôn site trên Netlify (*Site configuration → Delete this site*).
+- Gửi địa chỉ mới cho đồng nghiệp: **https://chamdiembenhan-production.up.railway.app**
 
 ## Lưu ý khi chuyển đổi
 
