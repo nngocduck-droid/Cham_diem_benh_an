@@ -38,6 +38,7 @@ VERIFY_HOURS = 48
 RESET_MINUTES = 60
 EMAIL_COOLDOWN_SECONDS = 60
 MIN_PASSWORD_LEN = 8
+MAX_FILES_PER_BATCH = int(os.getenv("MAX_FILES_PER_BATCH", "12"))  # số file tối đa mỗi lần chấm
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
@@ -270,6 +271,7 @@ def cau_hinh():
         "can_ma_dang_ky": bool(registration_code()),
         "ten_mien_cho_phep": allowed_domains(),
         "mat_khau_toi_thieu": MIN_PASSWORD_LEN,
+        "so_file_toi_da": MAX_FILES_PER_BATCH,
     }
 
 

@@ -136,6 +136,12 @@ body { font-family:'Inter',sans-serif; background:var(--gray-50); color:var(--gr
 .drop-icon { font-size:36px; margin-bottom:12px; }
 .drop-title { font-size:14px; font-weight:600; color:var(--gray-700); margin-bottom:4px; }
 .drop-sub { font-size:13px; color:var(--gray-400); }
+.file-item.bad { background:var(--danger-light); border-color:#fca5a5; }
+.file-item.bad .fname { color:var(--danger); }
+.file-item .fwarn { font-size:12px; color:var(--danger); font-weight:500; }
+.row-error td { background:#fff7f7; }
+.err-text { color:var(--danger); font-size:13px; font-weight:500; }
+.err-hint { color:var(--gray-500); font-size:12px; margin-top:3px; }
 
 .file-list { margin-top:16px; display:flex; flex-direction:column; gap:8px; }
 .file-item {
@@ -577,14 +583,14 @@ tr:hover td { background:var(--gray-50); }
       <div class="upload-card">
         <div class="card-header">
           <div class="card-title">Tải lên bệnh án</div>
-          <span style="font-size:12px;color:var(--gray-400)">Hỗ trợ nhiều file PDF cùng lúc</span>
+          <span style="font-size:12px;color:var(--gray-400)" id="uploadHint">Tối đa 12 file PDF mỗi lần chấm</span>
         </div>
         <div class="card-body">
           <div class="drop-zone" id="dropZone">
             <input type="file" id="fileInput" accept=".pdf" multiple>
             <div class="drop-icon">📂</div>
             <div class="drop-title">Kéo thả file PDF vào đây</div>
-            <div class="drop-sub">hoặc nhấn để chọn nhiều file — có thể chọn cả lớp cùng lúc</div>
+            <div class="drop-sub" id="dropSub">hoặc nhấn để chọn nhiều file — tối đa 12 file mỗi lần chấm</div>
           </div>
           <div class="file-list" id="fileList"></div>
           <div id="alertBox" class="alert"></div>
@@ -932,11 +938,27 @@ function enterApp(user) {
   loadHistory();
 }
 
+let appConfig = null;
+let MAX_FILES = 12;
+async function getAppConfig() {
+  if (!appConfig) appConfig = await apiJson('/cau-hinh', {}, { auth: false });
+  return appConfig;
+}
+async function loadAppConfig() {
+  try {
+    const cfg = await getAppConfig();
+    MAX_FILES = cfg.so_file_toi_da || 12;
+    document.getElementById('dropSub').textContent = `hoặc nhấn để chọn nhiều file — tối đa ${MAX_FILES} file mỗi lần chấm`;
+    document.getElementById('uploadHint').textContent = `Tối đa ${MAX_FILES} file PDF mỗi lần chấm`;
+    renderFileList();
+  } catch(e) {}
+}
+
 let registerConfigLoaded = false;
 async function loadRegisterConfig() {
   if (registerConfigLoaded) return;
   try {
-    const cfg = await apiJson('/cau-hinh', {}, { auth: false });
+    const cfg = await getAppConfig();
     registerConfigLoaded = true;
     document.getElementById('regCodeField').style.display = cfg.can_ma_dang_ky ? 'block' : 'none';
     document.getElementById('regCode').required = !!cfg.can_ma_dang_ky;
@@ -1116,22 +1138,48 @@ dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classL
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
 dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag'); addFiles(Array.from(e.dataTransfer.files)); });
 
+// Kiểm tra nhanh trên trình duyệt; file lỗi vẫn nằm trong danh sách và được ghi vào Excel kết quả
+function precheckFile(f) {
+  if (!f.name.toLowerCase().endsWith('.pdf'))
+    return { loi: 'Không phải file PDF', goi_y: 'Xuất bệnh án sang PDF (File → Lưu thành / Xuất → PDF) rồi tải lên lại.' };
+  if (f.size === 0)
+    return { loi: 'File rỗng (0 KB)', goi_y: 'Kiểm tra lại file gốc rồi tải lên lại.' };
+  if (f.size > 30 * 1024 * 1024)
+    return { loi: `File quá lớn (${(f.size / 1048576).toFixed(1)} MB, tối đa 30 MB)`, goi_y: 'Giảm dung lượng PDF (nén ảnh hoặc xuất lại từ Word) rồi tải lên lại.' };
+  return null;
+}
+
 function addFiles(files) {
-  const pdfs = files.filter(f => f.name.endsWith('.pdf'));
-  pdfs.forEach(f => { if (!selectedFiles.find(x => x.name === f.name)) selectedFiles.push(f); });
+  const skippedLimit = [], skippedDup = [];
+  for (const f of files) {
+    if (selectedFiles.find(x => x.name === f.name)) { skippedDup.push(f.name); continue; }
+    if (selectedFiles.length >= MAX_FILES) { skippedLimit.push(f.name); continue; }
+    selectedFiles.push(f);
+  }
+  fileInput.value = '';
   renderFileList();
+  const msgs = [];
+  if (skippedLimit.length)
+    msgs.push(`Mỗi lần chấm tối đa ${MAX_FILES} file – đã bỏ qua ${skippedLimit.length} file: ${skippedLimit.join(', ')}. Hãy chấm các file này ở lần sau.`);
+  if (skippedDup.length)
+    msgs.push(`Bỏ qua file trùng tên đã có trong danh sách: ${skippedDup.join(', ')}.`);
+  if (msgs.length) showAlert('⚠️ ' + msgs.join(' '), 'warning'); else hideAlert();
 }
 
 function renderFileList() {
   const list = document.getElementById('fileList');
-  list.innerHTML = selectedFiles.map((f,i) => `
-    <div class="file-item">
-      <span>📄</span>
-      <span class="fname">${esc(f.name)}</span>
+  list.innerHTML = selectedFiles.map((f,i) => {
+    const bad = precheckFile(f);
+    return `
+    <div class="file-item${bad ? ' bad' : ''}">
+      <span>${bad ? '⚠️' : '📄'}</span>
+      <span class="fname">${esc(f.name)}${bad ? ` <span class="fwarn">— ${esc(bad.loi)} (sẽ ghi là lỗi trong Excel)</span>` : ''}</span>
       <span class="fremove" onclick="removeFile(${i})">✕</span>
-    </div>`).join('');
-  document.getElementById('btnGrade').disabled = selectedFiles.length === 0;
-  document.getElementById('fileCountLabel').textContent = selectedFiles.length > 0 ? `${selectedFiles.length} file đã chọn` : '';
+    </div>`;
+  }).join('');
+  const n = selectedFiles.length;
+  document.getElementById('btnGrade').disabled = n === 0;
+  document.getElementById('fileCountLabel').textContent = n > 0 ? `${n}/${MAX_FILES} file đã chọn${n >= MAX_FILES ? ' (đã đủ tối đa)' : ''}` : '';
 }
 
 function removeFile(i) { selectedFiles.splice(i,1); renderFileList(); }
@@ -1139,16 +1187,21 @@ function removeFile(i) { selectedFiles.splice(i,1); renderFileList(); }
 // ── Grade ──
 async function chamNhieu() {
   if (!selectedFiles.length) return;
+  if (selectedFiles.length > MAX_FILES) { showAlert(`⚠️ Mỗi lần chấm tối đa ${MAX_FILES} file.`, 'warning'); return; }
   hideAlert();
   emailStatus('', '');
   document.getElementById('plagWarning').style.display = 'none';
+  document.getElementById('btnGrade').disabled = true;
 
+  const files = selectedFiles.slice();
   const allResults = [];
   const allErrors = [];
 
-  for (let i = 0; i < selectedFiles.length; i++) {
-    const file = selectedFiles[i];
-    showLoading(`Đang chấm ${i + 1}/${selectedFiles.length} bệnh án...`, `Đang xử lý: ${file.name}`);
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const bad = precheckFile(file);
+    if (bad) { allErrors.push({ file: file.name, ...bad }); continue; }
+    showLoading(`Đang chấm ${i + 1}/${files.length} bệnh án...`, `Đang xử lý: ${file.name}`);
 
     const form = new FormData();
     form.append('files', file);
@@ -1159,9 +1212,15 @@ async function chamNhieu() {
       allErrors.push(...(data.errors || []));
     } catch(e) {
       if (e.status === 401) { hideLoading(); return; }
-      allErrors.push({ file: file.name, loi: e.message });
+      allErrors.push(e.status === 0
+        ? { file: file.name, loi: 'Mất kết nối tới server khi chấm file này', goi_y: 'Kiểm tra mạng rồi chấm lại file này.' }
+        : { file: file.name, loi: `Server báo lỗi (${e.status}): ${e.message}`, goi_y: 'Chấm lại file này; nếu lỗi lặp lại, báo quản trị viên.' });
     }
   }
+
+  // Lần chấm đã xong → xoá danh sách để chọn lô tiếp theo
+  selectedFiles = [];
+  renderFileList();
 
   // Kiểm tra đạo văn sau khi chấm xong
   let plagiarism = [];
@@ -1175,7 +1234,7 @@ async function chamNhieu() {
 
   hideLoading();
 
-  lastBatchResult = { results: allResults, plagiarism, tong_so: allResults.length, loi_so: allErrors.length };
+  lastBatchResult = { results: allResults, errors: allErrors, plagiarism, tong_so: allResults.length, loi_so: allErrors.length };
   lastPlagiarism = plagiarism;
 
   renderBatchResults(lastBatchResult);
@@ -1187,13 +1246,14 @@ async function chamNhieu() {
   }
 
   if (allErrors.length) {
-    showAlert(`⚠️ ${allErrors.length} file lỗi: ${allErrors.map(e => e.file).join(', ')}`, 'warning');
+    showAlert(`⚠️ ${allErrors.length} file lỗi, chưa được chấm: ${allErrors.map(e => e.file).join(', ')}. Xem lý do và cách khắc phục trong bảng kết quả – các file này vẫn được ghi vào file Excel.`, 'warning');
   }
 
   // Tự động gửi file Excel tổng hợp qua email (nếu người dùng bật trong Tài khoản)
-  if (allResults.length && currentUser?.email_ket_qua) {
+  const coKetQua = allResults.length || allErrors.length;
+  if (coKetQua && currentUser?.email_ket_qua) {
     await guiEmailKetQua(true);
-  } else if (allResults.length) {
+  } else if (coKetQua) {
     emailStatus('Tự động gửi email đang tắt (bật trong trang Tài khoản). Bấm “✉ Gửi qua email” nếu cần.', 'info');
   }
 }
@@ -1206,12 +1266,13 @@ function emailStatus(text, type) {
 }
 async function guiEmailKetQua(auto) {
   const ids = (lastBatchResult?.results || []).map(r => r.id).filter(Boolean);
-  if (!ids.length) return;
+  const errors = lastBatchResult?.errors || [];
+  if (!ids.length && !errors.length) return;
   const btn = document.getElementById('btnEmail');
   btn.disabled = true;
   emailStatus(`✉️ Đang gửi file Excel kết quả tới ${currentUser?.email || 'email của bạn'}...`, 'info');
   try {
-    const data = await apiJson('/gui-email-ket-qua', { method: 'POST', json: { record_ids: ids, plagiarism: lastPlagiarism } });
+    const data = await apiJson('/gui-email-ket-qua', { method: 'POST', json: { record_ids: ids, plagiarism: lastPlagiarism, errors } });
     emailStatus(`✅ ${data.message}${auto ? ' (tự động)' : ''}.`, 'success');
   } catch(e) {
     if (e.status !== 401) emailStatus(`⚠️ ${e.message}`, 'error');
@@ -1229,9 +1290,15 @@ function renderBatchResults(data) {
       <td><span class="rank-pill" style="${rankStyle(r.xep_loai)}">${esc(r.xep_loai)}</span></td>
       <td><button onclick='openPanelByIndex("batch",${idx})' style="font-size:12px;padding:4px 10px;border:1px solid var(--gray-300);border-radius:5px;cursor:pointer;background:white">Chi tiết</button></td>
     </tr>`;
-  }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:24px">Không có kết quả</td></tr>';
+  }).join('') + (data.errors || []).map(e => `<tr class="row-error">
+      <td style="font-weight:500">${esc(e.file)}</td>
+      <td colspan="2"><div class="err-text">❌ ${esc(e.loi)}</div>${e.goi_y ? `<div class="err-hint">→ ${esc(e.goi_y)}</div>` : ''}</td>
+      <td><span class="rank-pill" style="background:#fef2f2;color:#dc2626">Lỗi</span></td>
+      <td></td>
+    </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:24px">Không có kết quả</td></tr>';
 
-  document.getElementById('batchTitle').textContent = `Kết quả chấm — ${data.tong_so} bệnh án`;
+  const nLoi = (data.errors || []).length;
+  document.getElementById('batchTitle').textContent = `Kết quả chấm — ${data.tong_so} bệnh án` + (nLoi ? ` · ${nLoi} file lỗi` : '');
   document.getElementById('batchResults').style.display = 'block';
   document.getElementById('batchResults').scrollIntoView({ behavior:'smooth' });
 
@@ -1354,7 +1421,7 @@ async function xuatExcel() {
   if (!lastBatchResult) return;
   showLoading('Đang tạo file Excel...', '');
   try {
-    const payload = { results: lastBatchResult.results, plagiarism: lastPlagiarism };
+    const payload = { results: lastBatchResult.results, plagiarism: lastPlagiarism, errors: lastBatchResult.errors || [] };
     const res = await apiFetch('/xuat-excel-nhieu', { method:'POST', json: payload });
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
@@ -1809,6 +1876,7 @@ function showToastAlert(text) {
 // ── Khởi động ──
 async function init() {
   try { sessionStorage.removeItem('auth'); } catch(e) {}  // khoá đăng nhập kiểu cũ
+  loadAppConfig();
   const params = new URLSearchParams(location.search);
   const verifyToken = params.get('verify_token');
   const urlResetToken = params.get('reset_token');

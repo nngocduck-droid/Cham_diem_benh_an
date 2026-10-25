@@ -23,6 +23,8 @@ from auth import get_current_user
 from email_service import EmailError
 from excel_export import build_excel, excel_filename, XLSX_MIME
 from dao_van import find_pairs
+from loi_file import FileLoi, kiem_tra_file, doc_pdf, loi_ai, lay_text_phan_hoi, phan_tich_ket_qua, lam_sach_loi
+from auth import MAX_FILES_PER_BATCH
 import admin
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
@@ -123,11 +125,26 @@ Hãy trả về JSON với định dạng chính xác sau (không thêm bất k�
 """
 
 def extract_text_from_pdf(file_bytes: bytes) -> str:
-    with fitz.open(stream=file_bytes, filetype="pdf") as doc:
-        text = ""
-        for page in doc:
-            text += page.get_text()
-    return text.strip()
+    """Đọc chữ trong PDF; báo FileLoi nếu file hỏng, có mật khẩu hoặc không có chữ (xem loi_file.py)."""
+    return doc_pdf(file_bytes)
+
+
+async def cham_mot_file(file: UploadFile) -> dict:
+    """Chấm một file. Trả về kết quả, hoặc báo FileLoi kèm mô tả lỗi rõ ràng."""
+    content = await file.read()
+    kiem_tra_file(file.filename, content)
+    text = await asyncio.to_thread(extract_text_from_pdf, content)
+    prompt = f"{RUBRIC}\n\nNỘI DUNG BỆNH ÁN:\n{text}"
+    try:
+        # Chạy trong luồng riêng để khi một người đang chấm, người khác vẫn dùng app bình thường
+        response = await asyncio.to_thread(model.generate_content, prompt)
+    except Exception as e:
+        log.warning("Gemini lỗi với file %s: %s: %s", file.filename, type(e).__name__, e)
+        raise loi_ai(e)
+    result = phan_tich_ket_qua(lay_text_phan_hoi(response))
+    result["ten_file"] = file.filename
+    result["thoi_gian"] = now_vn().strftime("%d/%m/%Y %H:%M")
+    return result
 
 def check_plagiarism(records: list) -> list:
     """So sánh các cặp bệnh án để phát hiện trùng lặp (xem dao_van.py)"""
@@ -135,34 +152,21 @@ def check_plagiarism(records: list) -> list:
 
 @app.post("/cham-nhieu")
 async def cham_nhieu(files: List[UploadFile] = File(...), user=Depends(get_current_user)):
+    if len(files) > MAX_FILES_PER_BATCH:
+        raise HTTPException(400, f"Mỗi lần chấm tối đa {MAX_FILES_PER_BATCH} file "
+                                 f"(đang gửi {len(files)} file).")
     results = []
     errors = []
 
     for file in files:
-        if not file.filename.lower().endswith(".pdf"):
-            errors.append({"file": file.filename, "loi": "Không phải file PDF"})
-            continue
         try:
-            content = await file.read()
-            text = await asyncio.to_thread(extract_text_from_pdf, content)
-            if not text:
-                errors.append({"file": file.filename, "loi": "Không đọc được nội dung PDF"})
-                continue
-
-            prompt = f"{RUBRIC}\n\nNỘI DUNG BỆNH ÁN:\n{text}"
-            # Chạy trong luồng riêng để khi một người đang chấm, người khác vẫn dùng app bình thường
-            response = await asyncio.to_thread(model.generate_content, prompt)
-            raw = response.text.strip()
-            if raw.startswith("```"):
-                raw = raw.split("```")[1]
-                if raw.startswith("json"):
-                    raw = raw[4:]
-            result = json.loads(raw.strip())
-            result["ten_file"] = file.filename
-            result["thoi_gian"] = now_vn().strftime("%d/%m/%Y %H:%M")
-            results.append(result)
+            results.append(await cham_mot_file(file))
+        except FileLoi as e:
+            errors.append(e.to_dict(file.filename))
         except Exception as e:
-            errors.append({"file": file.filename, "loi": str(e)})
+            log.exception("Lỗi không xác định khi chấm %s", file.filename)
+            errors.append({"file": file.filename, "loi": f"Lỗi không xác định: {str(e)[:200]}",
+                           "goi_y": "Chấm lại file này; nếu lỗi lặp lại, báo quản trị viên."})
 
     # Lưu vào lịch sử của người dùng (mỗi kết quả được gán "id")
     if results:
@@ -199,10 +203,11 @@ def kiem_tra_dao_van(user=Depends(get_current_user)):
 
 @app.post("/xuat-excel-nhieu")
 def xuat_excel_nhieu(data: dict, user=Depends(get_current_user)):
-    results = data.get("results", [])
-    if not results:
+    results = data.get("results") or []
+    errors = lam_sach_loi(data.get("errors"))
+    if not results and not errors:
         raise HTTPException(status_code=400, detail="Không có dữ liệu")
-    content = build_excel(results, data.get("plagiarism", []))
+    content = build_excel(results, data.get("plagiarism") or [], errors)
     fname = excel_filename()
     return Response(content, media_type=XLSX_MIME,
                     headers={"Content-Disposition": f'attachment; filename="{fname}"'})
@@ -210,12 +215,16 @@ def xuat_excel_nhieu(data: dict, user=Depends(get_current_user)):
 @app.post("/gui-email-ket-qua")
 def gui_email_ket_qua(data: dict, user=Depends(get_current_user)):
     """Gửi file Excel tổng hợp của một lần chấm tới email của người dùng.
-    Body: {"record_ids": [...], "plagiarism": [...]} – record_ids là "id" trả về từ /cham-nhieu."""
+    Body: {"record_ids": [...], "plagiarism": [...], "errors": [{file, loi, goi_y}]}
+    – record_ids là "id" trả về từ /cham-nhieu; errors là các file bị lỗi trong lần chấm đó."""
     ids = data.get("record_ids") or []
-    if not isinstance(ids, list) or not ids:
+    if not isinstance(ids, list):
+        ids = []
+    errors = lam_sach_loi(data.get("errors"))
+    if not ids and not errors:
         raise HTTPException(400, "Không có kết quả nào để gửi.")
-    results = db.get_records(user["id"], ids[:500])
-    if not results:
+    results = db.get_records(user["id"], ids[:500]) if ids else []
+    if ids and not results and not errors:
         raise HTTPException(404, "Không tìm thấy kết quả chấm.")
     plagiarism = data.get("plagiarism") or []
     if not isinstance(plagiarism, list):
@@ -224,7 +233,7 @@ def gui_email_ket_qua(data: dict, user=Depends(get_current_user)):
     try:
         email_service.send_results_email(
             user["email"], user["ho_ten"], results, plagiarism,
-            build_excel(results, plagiarism), excel_filename(), when,
+            build_excel(results, plagiarism, errors), excel_filename(), when, errors,
         )
     except EmailError as e:
         raise HTTPException(502, f"Không gửi được email: {e}")

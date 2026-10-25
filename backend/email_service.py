@@ -201,7 +201,8 @@ def send_password_changed_email(to: str, ho_ten: str, when: str):
 
 
 def send_results_email(to: str, ho_ten: str, results: list, plagiarism: list,
-                       xlsx_bytes: bytes, filename: str, when: str):
+                       xlsx_bytes: bytes, filename: str, when: str, errors: list = None):
+    errors = errors or []
     n = len(results)
     avg = sum(float(r.get("tong_diem") or 0) for r in results) / n if n else 0
     passed = sum(1 for r in results if float(r.get("tong_diem") or 0) >= 5)
@@ -212,6 +213,28 @@ def send_results_email(to: str, ho_ten: str, results: list, plagiarism: list,
         for r in results[:50]
     )
     more = f'<p style="font-size:12px;color:#6b7280">… và {n-50} bệnh án khác (xem trong file Excel).</p>' if n > 50 else ""
+    loi_html = ""
+    if errors:
+        loi_rows = "".join(
+            f'<tr><td style="padding:6px 8px;border-bottom:1px solid #fde2e1">{_esc(e.get("file",""))}</td>'
+            f'<td style="padding:6px 8px;border-bottom:1px solid #fde2e1;color:#b91c1c">{_esc(e.get("loi",""))}'
+            + (f'<div style="color:#6b7280;font-size:12px;margin-top:2px">→ {_esc(e.get("goi_y",""))}</div>' if e.get("goi_y") else "")
+            + '</td></tr>'
+            for e in errors
+        )
+        loi_html = (f'<p style="margin:16px 0 6px;font-weight:bold;color:#b91c1c">❌ {len(errors)} file lỗi – chưa được chấm '
+                    f'(đã ghi trong file Excel, sheet “File lỗi”):</p>'
+                    f'<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;'
+                    f'font-size:13px;background:#fef2f2;border-radius:8px">{loi_rows}</table>')
+    bang_ket_qua = ""
+    if results:
+        bang_ket_qua = (
+            '<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:13px;margin-top:14px">'
+            '<tr style="background:#f9fafb"><th style="padding:6px 8px;text-align:left">File</th>'
+            '<th style="padding:6px 8px">Điểm</th><th style="padding:6px 8px">Xếp loại</th></tr>'
+            f'{rows}</table>{more}'
+        )
+    nhan_loi = f" · {len(errors)} lỗi" if errors else ""
     plag = (f'<p style="background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c;padding:10px 12px;border-radius:8px;font-size:13px">'
             f'⚠️ Phát hiện {len(plagiarism)} cặp bệnh án nghi vấn trùng lặp – xem sheet “Kiểm tra đạo văn”.</p>') if plagiarism else ""
     html = _layout("Kết quả chấm bệnh án", f"""
@@ -219,18 +242,21 @@ def send_results_email(to: str, ho_ten: str, results: list, plagiarism: list,
 <p>Lần chấm lúc <strong>{_esc(when)}</strong> đã hoàn tất. File Excel tổng hợp được đính kèm trong email này.</p>
 <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:14px 0;font-size:13px">
 <tr>
-<td style="background:#eff6ff;border-radius:8px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:bold;color:#1d4ed8">{n}</div><div style="color:#6b7280">bệnh án</div></td>
+<td style="background:#eff6ff;border-radius:8px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:bold;color:#1d4ed8">{n}</div><div style="color:#6b7280">đã chấm{nhan_loi}</div></td>
 <td style="width:8px"></td>
 <td style="background:#eff6ff;border-radius:8px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:bold;color:#1d4ed8">{avg:.2f}</div><div style="color:#6b7280">điểm TB</div></td>
 <td style="width:8px"></td>
 <td style="background:#eff6ff;border-radius:8px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:bold;color:#1d4ed8">{passed}/{n}</div><div style="color:#6b7280">đạt ≥ 5</div></td>
 </tr></table>
 {plag}
-<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;font-size:13px">
-<tr style="background:#f9fafb"><th style="padding:6px 8px;text-align:left">File</th><th style="padding:6px 8px">Điểm</th><th style="padding:6px 8px">Xếp loại</th></tr>
-{rows}
-</table>{more}""")
-    text = (f"Chào {ho_ten},\n\nLần chấm lúc {when} đã hoàn tất: {n} bệnh án, điểm TB {avg:.2f}, "
-            f"đạt {passed}/{n}. File Excel tổng hợp được đính kèm.\n")
-    send_email(to, f"Kết quả chấm bệnh án – {when} ({n} bệnh án)", html, text,
-               attachments=[(filename, xlsx_bytes, XLSX_MIME)])
+{loi_html}
+{bang_ket_qua}""")
+    text = (f"Chào {ho_ten},\n\nLần chấm lúc {when} đã hoàn tất: {n} bệnh án đã chấm, điểm TB {avg:.2f}, "
+            f"đạt {passed}/{n}.")
+    if errors:
+        text += f"\n{len(errors)} file lỗi (chưa chấm):\n" + "\n".join(
+            f"- {e.get('file','')}: {e.get('loi','')}" + (f" → {e.get('goi_y')}" if e.get("goi_y") else "")
+            for e in errors)
+    text += "\nFile Excel tổng hợp được đính kèm.\n"
+    tieu_de = f"Kết quả chấm bệnh án – {when} ({n} bệnh án" + (f", {len(errors)} file lỗi)" if errors else ")")
+    send_email(to, tieu_de, html, text, attachments=[(filename, xlsx_bytes, XLSX_MIME)])

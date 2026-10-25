@@ -6,7 +6,8 @@ Phiên bản này thêm:
 2. **Đổi mật khẩu** (trang *Tài khoản*) và **Quên mật khẩu** (gửi link đặt lại qua email, hiệu lực 60 phút, dùng một lần). Sau khi đổi mật khẩu, các phiên đăng nhập khác bị đăng xuất và người dùng nhận email thông báo.
 3. **Gửi file Excel tổng hợp qua email sau mỗi lần chấm** (tự động, có thể tắt trong *Tài khoản*), kèm nút **“✉ Gửi qua email”** để gửi lại.
 
-4. **Tài khoản admin** với trang **Quản trị**: quản lý người dùng, xem lịch sử chấm toàn hệ thống, kiểm tra đạo văn chéo giữa các giảng viên, sao lưu dữ liệu, nhật ký quản trị (xem mục *Tài khoản admin* bên dưới).
+4. **Mỗi lần chấm tối đa 12 file.** File lỗi được ghi rõ lý do và cách khắc phục – trong bảng kết quả, trong file Excel (dòng đỏ ở sheet *Tổng hợp* + sheet *File lỗi*) và trong email kết quả (xem mục *Giới hạn file & file lỗi*).
+5. **Tài khoản admin** với trang **Quản trị**: quản lý người dùng, xem lịch sử chấm toàn hệ thống, kiểm tra đạo văn chéo giữa các giảng viên, sao lưu dữ liệu, nhật ký quản trị (xem mục *Tài khoản admin* bên dưới).
 
 Ngoài ra:
 - Mỗi người chỉ thấy **lịch sử chấm của mình**; kiểm tra đạo văn cũng chạy trong lịch sử của từng người.
@@ -109,6 +110,25 @@ git push
 - Mật khẩu chung cũ **không còn dùng để đăng nhập**. Mỗi người cần tự đăng ký tài khoản (dùng mật khẩu chung cũ làm mã đăng ký nếu bạn giữ mặc định).
 - Lịch sử cũ trong `lich_su_cham.json` (nếu file còn trên server) được nhập một lần và gán cho admin gốc đầu tiên đăng nhập. Trên Railway file này thường đã mất qua các lần deploy trước.
 - Nếu trước đó bạn đã đặt `OWNER_EMAIL`, biến này vẫn được hiểu như `ADMIN_EMAILS`.
+
+## Giới hạn file & file lỗi
+
+- Mỗi lần chấm tối đa **12 file** (đổi được bằng biến `MAX_FILES_PER_BATCH` trên Railway). Chọn nhiều hơn thì app chỉ giữ 12 file đầu và báo tên các file bị bỏ qua để chấm ở lần sau. Sau mỗi lần chấm, danh sách file được xoá để chọn lô tiếp theo.
+- Các lỗi được phát hiện và ghi rõ:
+
+| Lỗi | Cách khắc phục (app gợi ý) |
+|---|---|
+| Không phải file PDF (vd. .docx) | Xuất bệnh án sang PDF |
+| File rỗng / quá lớn (> 30 MB) | Kiểm tra file gốc / giảm dung lượng |
+| PDF bị hỏng, không mở được | Xuất lại PDF từ file gốc |
+| PDF có mật khẩu | Bỏ mật khẩu, lưu ra PDF mới |
+| PDF không có chữ (bản scan, ảnh chụp) | Xuất PDF trực tiếp từ Word/Google Docs |
+| Hết hạn mức gọi AI (Gemini) | Đợi vài phút rồi chấm lại |
+| Máy chủ AI quá tải / phản hồi chậm | Chấm lại sau ít phút |
+| AI từ chối xử lý / trả kết quả sai định dạng | Chấm lại file đó |
+| Mất kết nối tới server | Kiểm tra mạng rồi chấm lại |
+
+- File lỗi **không** được lưu vào lịch sử chấm, nhưng vẫn có trong: bảng kết quả (dòng đỏ), file **Excel** (dòng “LỖI” ở sheet *Tổng hợp* với cột *Ghi chú* + sheet *File lỗi* có cột *Cách khắc phục*) và **email kết quả**. Nếu cả lô đều lỗi, vẫn xuất Excel và gửi email được.
 
 ## Tài khoản admin
 

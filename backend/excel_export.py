@@ -26,7 +26,16 @@ def _safe_sheet_name(ten_file: str, wb) -> str:
     return name
 
 
-def build_excel(results: list, plagiarism: list = None) -> bytes:
+def _num(v, default=0.0):
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return default
+
+
+def build_excel(results: list, plagiarism: list = None, errors: list = None) -> bytes:
+    """results: bệnh án đã chấm; errors: [{file, loi, goi_y}] – file lỗi, vẫn được ghi vào Excel."""
+    errors = errors or []
     wb = openpyxl.Workbook()
 
     # ── Sheet 1: Tổng hợp ──
@@ -45,38 +54,58 @@ def build_excel(results: list, plagiarism: list = None) -> bytes:
     thin = Side(style="thin", color="AAAAAA")
     bd = Border(left=thin, right=thin, top=thin, bottom=thin)
 
-    ws1.merge_cells("A1:H1")
+    ws1.merge_cells("A1:I1")
     ws1["A1"] = "BẢNG TỔNG HỢP ĐIỂM CHẤM BỆNH ÁN Y KHOA"
     ws1["A1"].font = Font(name="Times New Roman", bold=True, size=14, color="1F6AA5")
     ws1["A1"].alignment = center
 
-    ws1.merge_cells("A2:H2")
-    ws1["A2"] = f"Ngày xuất: {now_vn().strftime('%d/%m/%Y %H:%M')}  |  Tổng số bệnh án: {len(results)}"
+    ws1.merge_cells("A2:I2")
+    sub = f"Ngày xuất: {now_vn().strftime('%d/%m/%Y %H:%M')}  |  "
+    if errors:
+        sub += f"Tổng số file: {len(results) + len(errors)}  |  Đã chấm: {len(results)}  |  Lỗi: {len(errors)}"
+    else:
+        sub += f"Tổng số bệnh án: {len(results)}"
+    ws1["A2"] = sub
     ws1["A2"].font = Font(name="Times New Roman", italic=True, size=10, color="666666")
     ws1["A2"].alignment = center
     ws1.append([])
 
-    headers = ["STT", "File bệnh án", "Họ tên BN", "Tuổi", "Giới", "Tổng điểm", "Xếp loại", "Thời gian"]
+    headers = ["STT", "File bệnh án", "Họ tên BN", "Tuổi", "Giới", "Tổng điểm", "Xếp loại", "Thời gian", "Ghi chú"]
     ws1.append(headers)
     for col, h in enumerate(headers, 1):
         c = ws1.cell(row=4, column=col)
         c.fill = blue; c.font = white_bold; c.alignment = center; c.border = bd
 
     for i, r in enumerate(results, 1):
-        bn = r.get("benh_nhan", {})
-        diem = r.get("tong_diem", 0)
+        bn = r.get("benh_nhan") or {}
+        diem = _num(r.get("tong_diem"))
         fill = green_fill if diem >= 5 else red_fill
         row = [i, r.get("ten_file",""), bn.get("ho_ten",""), bn.get("tuoi",""),
-               bn.get("gioi",""), diem, r.get("xep_loai",""), r.get("thoi_gian","")]
+               bn.get("gioi",""), diem, r.get("xep_loai",""), r.get("thoi_gian",""), ""]
         ws1.append(row)
         ro = ws1.max_row
-        for col in range(1, 9):
+        for col in range(1, 10):
             c = ws1.cell(row=ro, column=col)
             c.fill = light if i % 2 == 0 else PatternFill("solid", fgColor="FFFFFF")
             c.font = normal; c.border = bd
             c.alignment = center if col != 2 else left
         ws1.cell(ro, 6).fill = fill
         ws1.cell(ro, 6).font = Font(name="Times New Roman", bold=True, size=11)
+
+    # File lỗi: vẫn ghi vào bảng tổng hợp, tô đỏ, ghi rõ lỗi
+    err_fill = PatternFill("solid", fgColor="FDE2E1")
+    red_bold = Font(name="Times New Roman", bold=True, size=11, color="C00000")
+    red_text = Font(name="Times New Roman", size=11, color="9C0006")
+    thoi_gian_loi = now_vn().strftime("%d/%m/%Y %H:%M")
+    for k, e in enumerate(errors, len(results) + 1):
+        ws1.append([k, e.get("file", ""), "", "", "", "—", "LỖI", thoi_gian_loi, e.get("loi", "")])
+        ro = ws1.max_row
+        for col in range(1, 10):
+            c = ws1.cell(row=ro, column=col)
+            c.fill = err_fill; c.font = normal; c.border = bd
+            c.alignment = left if col in (2, 9) else center
+        ws1.cell(ro, 7).font = red_bold
+        ws1.cell(ro, 9).font = red_text
 
     ws1.column_dimensions["A"].width = 6
     ws1.column_dimensions["B"].width = 30
@@ -86,6 +115,35 @@ def build_excel(results: list, plagiarism: list = None) -> bytes:
     ws1.column_dimensions["F"].width = 12
     ws1.column_dimensions["G"].width = 14
     ws1.column_dimensions["H"].width = 18
+    ws1.column_dimensions["I"].width = 45 if errors else 14
+
+    # ── Sheet "File lỗi" (ngay sau Tổng hợp) ──
+    if errors:
+        we = wb.create_sheet(title="File lỗi", index=1)
+        we.merge_cells("A1:D1")
+        we["A1"] = "DANH SÁCH FILE LỖI – CHƯA ĐƯỢC CHẤM"
+        we["A1"].font = Font(name="Times New Roman", bold=True, size=13, color="C00000")
+        we["A1"].alignment = center
+        we.merge_cells("A2:D2")
+        we["A2"] = f"{len(errors)} file không chấm được. Sửa theo cột “Cách khắc phục” rồi chấm lại các file này."
+        we["A2"].font = Font(name="Times New Roman", italic=True, size=10, color="666666")
+        we["A2"].alignment = center
+        we.append([])
+        hdr = ["STT", "File", "Lỗi", "Cách khắc phục"]
+        we.append(hdr)
+        for col in range(1, 5):
+            c = we.cell(row=4, column=col)
+            c.fill = PatternFill("solid", fgColor="C00000"); c.font = white_bold; c.alignment = center; c.border = bd
+        for k, e in enumerate(errors, 1):
+            we.append([k, e.get("file", ""), e.get("loi", ""), e.get("goi_y", "")])
+            ro = we.max_row
+            for col in range(1, 5):
+                c = we.cell(row=ro, column=col)
+                c.fill = err_fill if k % 2 else PatternFill("solid", fgColor="FFFFFF")
+                c.font = normal; c.border = bd
+                c.alignment = center if col == 1 else left
+        for col, w in zip("ABCD", [6, 34, 50, 55]):
+            we.column_dimensions[col].width = w
 
     # ── Sheet 2: Chi tiết từng bệnh án ──
     for r in results:
@@ -109,8 +167,9 @@ def build_excel(results: list, plagiarism: list = None) -> bytes:
             c.fill = blue; c.font = white_bold; c.alignment = center; c.border = bd
 
         for idx, item in enumerate(r.get("chi_tiet", []), 1):
-            pct = f"{round(item['diem_dat']/item['diem_toi_da']*100)}%" if item['diem_toi_da'] > 0 else "0%"
-            ws.append([item["stt"], item["ten_muc"], item["diem_toi_da"], item["diem_dat"], pct, item["nhan_xet"]])
+            dd, dm = _num(item.get('diem_dat')), _num(item.get('diem_toi_da'))
+            pct = f"{round(dd / dm * 100)}%" if dm > 0 else "0%"
+            ws.append([item.get("stt", idx), item.get("ten_muc", ""), dm, dd, pct, item.get("nhan_xet", "")])
             ro = ws.max_row
             fill_row = light if idx % 2 == 0 else PatternFill("solid", fgColor="FFFFFF")
             for col in range(1, 7):
