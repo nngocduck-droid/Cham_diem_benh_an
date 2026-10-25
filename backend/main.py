@@ -1,21 +1,29 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from typing import List
 import google.generativeai as genai
 import fitz  # PyMuPDF
+import asyncio
 import json
+import logging
 import os
-import re
-import openpyxl
-from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from dotenv import load_dotenv
-import tempfile
-from datetime import datetime
-from difflib import SequenceMatcher
+from thoi_gian import now_vn
 import pathlib
 
 load_dotenv()
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+log = logging.getLogger("benh_an")
+
+import db
+import auth
+import email_service
+from auth import get_current_user
+from email_service import EmailError
+from excel_export import build_excel, excel_filename, XLSX_MIME
+from dao_van import find_pairs
+import admin
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 model = genai.GenerativeModel("gemini-2.5-flash")
@@ -27,23 +35,16 @@ app.add_middleware(
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],  # để frontend (Netlify) đọc được tên file khi tải về
 )
 
-# ── Xác thực đơn giản ──
-APP_PASSWORD = os.getenv("APP_PASSWORD", "bacsi2024")
+db.init_db()
+log.info("Cách gửi email: %s", email_service.provider())
 
-@app.post("/login")
-def login(data: dict):
-    if data.get("password") == APP_PASSWORD:
-        return {"success": True, "message": "Đăng nhập thành công"}
-    raise HTTPException(status_code=401, detail="Mật khẩu không đúng")
-
-def check_auth(password: str):
-    if password != APP_PASSWORD:
-        raise HTTPException(status_code=401, detail="Không có quyền truy cập")
-
-# History file path - lưu cùng thư mục backend
-HISTORY_FILE = pathlib.Path(__file__).parent / "lich_su_cham.json"
+# ── Tài khoản: đăng ký, xác nhận email, đăng nhập, đổi/quên mật khẩu (xem auth.py) ──
+app.include_router(auth.router)
+# ── Quản trị: người dùng, lịch sử toàn hệ thống, đạo văn chéo, sao lưu (xem admin.py) ──
+app.include_router(admin.router)
 
 RUBRIC = """
 Bạn là giảng viên y khoa chấm bệnh án sinh viên. Hãy chấm điểm theo rubric sau (thang 10 điểm, điểm lẻ 0.25):
@@ -128,92 +129,29 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
             text += page.get_text()
     return text.strip()
 
-def load_history() -> list:
-    if HISTORY_FILE.exists():
-        try:
-            return json.loads(HISTORY_FILE.read_text(encoding="utf-8"))
-        except:
-            return []
-    return []
-
-def save_history(records: list):
-    HISTORY_FILE.write_text(json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8")
-
-def similarity(a: str, b: str) -> float:
-    return SequenceMatcher(None, a.lower(), b.lower()).ratio()
-
 def check_plagiarism(records: list) -> list:
-    """So sánh tất cả các cặp bệnh án để phát hiện trùng lặp"""
-    pairs = []
-    n = len(records)
-    for i in range(n):
-        for j in range(i + 1, n):
-            a = records[i]
-            b = records[j]
-
-            # So sánh thông tin bệnh nhân
-            bn_a = a.get("benh_nhan", {})
-            bn_b = b.get("benh_nhan", {})
-
-            same_patient = False
-            patient_clues = []
-
-            # Kiểm tra tên
-            ten_a = bn_a.get("ho_ten", "")
-            ten_b = bn_b.get("ho_ten", "")
-            if ten_a and ten_b and similarity(ten_a, ten_b) > 0.8:
-                same_patient = True
-                patient_clues.append(f"Tên bệnh nhân giống nhau: '{ten_a}' – '{ten_b}'")
-
-            # Kiểm tra mã bệnh nhân
-            ma_a = bn_a.get("ma_benh_nhan", "")
-            ma_b = bn_b.get("ma_benh_nhan", "")
-            if ma_a and ma_b and ma_a.strip() == ma_b.strip():
-                same_patient = True
-                patient_clues.append(f"Mã bệnh nhân trùng nhau: '{ma_a}'")
-
-            # Kiểm tra tuổi + giới
-            if (bn_a.get("tuoi") == bn_b.get("tuoi") and
-                bn_a.get("gioi", "").lower() == bn_b.get("gioi", "").lower() and
-                bn_a.get("tuoi")):
-                patient_clues.append(f"Cùng tuổi ({bn_a.get('tuoi')}) và giới tính ({bn_a.get('gioi')})")
-
-            # So sánh nội dung bệnh án
-            nxA = a.get("nhan_xet_chung", "")
-            nxB = b.get("nhan_xet_chung", "")
-            content_sim = similarity(nxA, nxB) if nxA and nxB else 0
-
-            # Chỉ báo cáo nếu có dấu hiệu trùng lặp
-            if same_patient or content_sim > 0.7:
-                muc_do = "🔴 Rất cao" if content_sim > 0.85 or (same_patient and content_sim > 0.6) else \
-                         "🟠 Cao" if content_sim > 0.7 or same_patient else "🟡 Trung bình"
-                pairs.append({
-                    "sv1": a.get("ten_file", ""),
-                    "sv2": b.get("ten_file", ""),
-                    "muc_do": muc_do,
-                    "do_tuong_dong": round(content_sim * 100, 1),
-                    "chi_tiet": patient_clues if patient_clues else ["Nội dung bệnh án tương đồng cao"]
-                })
-    return pairs
+    """So sánh các cặp bệnh án để phát hiện trùng lặp (xem dao_van.py)"""
+    return find_pairs(records)
 
 @app.post("/cham-nhieu")
-async def cham_nhieu(files: List[UploadFile] = File(...)):
+async def cham_nhieu(files: List[UploadFile] = File(...), user=Depends(get_current_user)):
     results = []
     errors = []
 
     for file in files:
-        if not file.filename.endswith(".pdf"):
+        if not file.filename.lower().endswith(".pdf"):
             errors.append({"file": file.filename, "loi": "Không phải file PDF"})
             continue
         try:
             content = await file.read()
-            text = extract_text_from_pdf(content)
+            text = await asyncio.to_thread(extract_text_from_pdf, content)
             if not text:
                 errors.append({"file": file.filename, "loi": "Không đọc được nội dung PDF"})
                 continue
 
             prompt = f"{RUBRIC}\n\nNỘI DUNG BỆNH ÁN:\n{text}"
-            response = model.generate_content(prompt)
+            # Chạy trong luồng riêng để khi một người đang chấm, người khác vẫn dùng app bình thường
+            response = await asyncio.to_thread(model.generate_content, prompt)
             raw = response.text.strip()
             if raw.startswith("```"):
                 raw = raw.split("```")[1]
@@ -221,16 +159,14 @@ async def cham_nhieu(files: List[UploadFile] = File(...)):
                     raw = raw[4:]
             result = json.loads(raw.strip())
             result["ten_file"] = file.filename
-            result["thoi_gian"] = datetime.now().strftime("%d/%m/%Y %H:%M")
+            result["thoi_gian"] = now_vn().strftime("%d/%m/%Y %H:%M")
             results.append(result)
         except Exception as e:
             errors.append({"file": file.filename, "loi": str(e)})
 
-    # Lưu vào lịch sử
+    # Lưu vào lịch sử của người dùng (mỗi kết quả được gán "id")
     if results:
-        history = load_history()
-        history.extend(results)
-        save_history(history)
+        db.add_records(user["id"], results)
 
     # Kiểm tra đạo văn trong lô này
     plagiarism = check_plagiarism(results) if len(results) > 1 else []
@@ -244,194 +180,55 @@ async def cham_nhieu(files: List[UploadFile] = File(...)):
     }
 
 @app.get("/lich-su")
-def get_lich_su():
-    return load_history()
+def get_lich_su(user=Depends(get_current_user)):
+    return db.list_records(user["id"])
 
 @app.delete("/lich-su")
-def xoa_lich_su():
-    save_history([])
-    return {"message": "Đã xoá toàn bộ lịch sử"}
+def xoa_lich_su(user=Depends(get_current_user)):
+    db.delete_records(user["id"])
+    return {"message": "Đã xoá toàn bộ lịch sử của bạn"}
 
 @app.post("/kiem-tra-dao-van")
-def kiem_tra_dao_van():
-    """Kiểm tra đạo văn trong toàn bộ lịch sử"""
-    history = load_history()
+def kiem_tra_dao_van(user=Depends(get_current_user)):
+    """Kiểm tra đạo văn trong toàn bộ lịch sử của người dùng"""
+    history = db.list_records(user["id"])
     if len(history) < 2:
         return {"pairs": [], "message": "Cần ít nhất 2 bệnh án để so sánh"}
     pairs = check_plagiarism(history)
     return {"pairs": pairs, "tong_cap": len(pairs)}
 
 @app.post("/xuat-excel-nhieu")
-async def xuat_excel_nhieu(data: dict):
+def xuat_excel_nhieu(data: dict, user=Depends(get_current_user)):
     results = data.get("results", [])
     if not results:
         raise HTTPException(status_code=400, detail="Không có dữ liệu")
+    content = build_excel(results, data.get("plagiarism", []))
+    fname = excel_filename()
+    return Response(content, media_type=XLSX_MIME,
+                    headers={"Content-Disposition": f'attachment; filename="{fname}"'})
 
-    wb = openpyxl.Workbook()
-
-    # ── Sheet 1: Tổng hợp ──
-    ws1 = wb.active
-    ws1.title = "Tổng hợp"
-
-    blue = PatternFill("solid", fgColor="1F6AA5")
-    light = PatternFill("solid", fgColor="D6E8F7")
-    green_fill = PatternFill("solid", fgColor="E2EFDA")
-    red_fill = PatternFill("solid", fgColor="FCE4D6")
-    white_bold = Font(name="Times New Roman", bold=True, color="FFFFFF", size=11)
-    bold = Font(name="Times New Roman", bold=True, size=11)
-    normal = Font(name="Times New Roman", size=11)
-    center = Alignment(horizontal="center", vertical="center", wrap_text=True)
-    left = Alignment(horizontal="left", vertical="center", wrap_text=True)
-    thin = Side(style="thin", color="AAAAAA")
-    bd = Border(left=thin, right=thin, top=thin, bottom=thin)
-
-    ws1.merge_cells("A1:H1")
-    ws1["A1"] = "BẢNG TỔNG HỢP ĐIỂM CHẤM BỆNH ÁN Y KHOA"
-    ws1["A1"].font = Font(name="Times New Roman", bold=True, size=14, color="1F6AA5")
-    ws1["A1"].alignment = center
-
-    ws1.merge_cells("A2:H2")
-    ws1["A2"] = f"Ngày xuất: {datetime.now().strftime('%d/%m/%Y %H:%M')}  |  Tổng số bệnh án: {len(results)}"
-    ws1["A2"].font = Font(name="Times New Roman", italic=True, size=10, color="666666")
-    ws1["A2"].alignment = center
-    ws1.append([])
-
-    headers = ["STT", "File bệnh án", "Họ tên BN", "Tuổi", "Giới", "Tổng điểm", "Xếp loại", "Thời gian"]
-    ws1.append(headers)
-    for col, h in enumerate(headers, 1):
-        c = ws1.cell(row=4, column=col)
-        c.fill = blue; c.font = white_bold; c.alignment = center; c.border = bd
-
-    for i, r in enumerate(results, 1):
-        bn = r.get("benh_nhan", {})
-        diem = r.get("tong_diem", 0)
-        fill = green_fill if diem >= 5 else red_fill
-        row = [i, r.get("ten_file",""), bn.get("ho_ten",""), bn.get("tuoi",""),
-               bn.get("gioi",""), diem, r.get("xep_loai",""), r.get("thoi_gian","")]
-        ws1.append(row)
-        ro = ws1.max_row
-        for col in range(1, 9):
-            c = ws1.cell(row=ro, column=col)
-            c.fill = light if i % 2 == 0 else PatternFill("solid", fgColor="FFFFFF")
-            c.font = normal; c.border = bd
-            c.alignment = center if col != 2 else left
-        ws1.cell(ro, 6).fill = fill
-        ws1.cell(ro, 6).font = Font(name="Times New Roman", bold=True, size=11)
-
-    ws1.column_dimensions["A"].width = 6
-    ws1.column_dimensions["B"].width = 30
-    ws1.column_dimensions["C"].width = 20
-    ws1.column_dimensions["D"].width = 8
-    ws1.column_dimensions["E"].width = 8
-    ws1.column_dimensions["F"].width = 12
-    ws1.column_dimensions["G"].width = 14
-    ws1.column_dimensions["H"].width = 18
-
-    # ── Sheet 2: Chi tiết từng bệnh án ──
-    for r in results:
-        sname = r.get("ten_file","").replace(".pdf","")[:28]
-        ws = wb.create_sheet(title=sname)
-        ws.merge_cells("A1:F1")
-        ws["A1"] = f"KẾT QUẢ CHẤM: {r.get('ten_file','')}"
-        ws["A1"].font = Font(name="Times New Roman", bold=True, size=13, color="1F6AA5")
-        ws["A1"].alignment = center
-
-        bn = r.get("benh_nhan", {})
-        ws.merge_cells("A2:F2")
-        ws["A2"] = f"Bệnh nhân: {bn.get('ho_ten','')} | Tuổi: {bn.get('tuoi','')} | Giới: {bn.get('gioi','')} | Mã: {bn.get('ma_benh_nhan','')}"
-        ws["A2"].font = Font(name="Times New Roman", italic=True, size=10)
-        ws["A2"].alignment = center
-        ws.append([])
-
-        hdrs = ["STT", "Nội dung", "Điểm tối đa", "Điểm đạt", "Tỉ lệ", "Nhận xét"]
-        ws.append(hdrs)
-        for col, h in enumerate(hdrs, 1):
-            c = ws.cell(row=4, column=col)
-            c.fill = blue; c.font = white_bold; c.alignment = center; c.border = bd
-
-        for idx, item in enumerate(r.get("chi_tiet", []), 1):
-            pct = f"{round(item['diem_dat']/item['diem_toi_da']*100)}%" if item['diem_toi_da'] > 0 else "0%"
-            ws.append([item["stt"], item["ten_muc"], item["diem_toi_da"], item["diem_dat"], pct, item["nhan_xet"]])
-            ro = ws.max_row
-            fill_row = light if idx % 2 == 0 else PatternFill("solid", fgColor="FFFFFF")
-            for col in range(1, 7):
-                c = ws.cell(row=ro, column=col)
-                c.fill = fill_row; c.font = normal; c.border = bd
-                c.alignment = center if col in [1,3,4,5] else left
-
-        # Total
-        tr = ws.max_row + 1
-        ws.merge_cells(f"A{tr}:B{tr}")
-        ws.cell(tr,1,"TỔNG ĐIỂM").font = white_bold
-        ws.cell(tr,1).fill = blue; ws.cell(tr,1).alignment = center; ws.cell(tr,1).border = bd
-        ws.cell(tr,3,10.0).fill = blue; ws.cell(tr,3).font = white_bold; ws.cell(tr,3).alignment = center; ws.cell(tr,3).border = bd
-        ws.cell(tr,4, r.get("tong_diem",0)).font = Font(name="Times New Roman", bold=True, size=13, color="C00000")
-        ws.cell(tr,4).fill = green_fill; ws.cell(tr,4).alignment = center; ws.cell(tr,4).border = bd
-        ws.cell(tr,5, r.get("xep_loai","")).font = bold; ws.cell(tr,5).fill = green_fill; ws.cell(tr,5).alignment = center; ws.cell(tr,5).border = bd
-        ws.cell(tr,6, r.get("nhan_xet_chung","")).font = normal; ws.cell(tr,6).fill = green_fill; ws.cell(tr,6).alignment = left; ws.cell(tr,6).border = bd
-
-        # Các phần cần sửa
-        phan_sua = r.get("cac_phan_can_sua", [])
-        if phan_sua:
-            sr = ws.max_row + 1
-            ws.merge_cells(f"A{sr}:B{sr}")
-            ws.cell(sr, 1, "CÁC PHẦN CẦN SỬA").font = Font(name="Times New Roman", bold=True, size=11, color="C00000")
-            ws.cell(sr, 1).fill = PatternFill("solid", fgColor="FCE4D6"); ws.cell(sr, 1).alignment = center; ws.cell(sr, 1).border = bd
-            ws.merge_cells(f"C{sr}:F{sr}")
-            sua_text = "\n".join(f"{i+1}. {s}" for i, s in enumerate(phan_sua))
-            ws.cell(sr, 3, sua_text).font = normal; ws.cell(sr, 3).alignment = Alignment(horizontal="left", vertical="top", wrap_text=True); ws.cell(sr, 3).border = bd
-            ws.cell(sr, 3).fill = PatternFill("solid", fgColor="FFF2CC")
-            ws.row_dimensions[sr].height = max(15 * len(phan_sua), 30)
-
-        ws.column_dimensions["A"].width = 6
-        ws.column_dimensions["B"].width = 26
-        ws.column_dimensions["C"].width = 13
-        ws.column_dimensions["D"].width = 11
-        ws.column_dimensions["E"].width = 10
-        ws.column_dimensions["F"].width = 55
-
-    # ── Sheet 3: Kiểm tra đạo văn ──
-    plagiarism = data.get("plagiarism", [])
-    ws3 = wb.create_sheet(title="Kiểm tra đạo văn")
-    ws3.merge_cells("A1:E1")
-    ws3["A1"] = "DANH SÁCH CÁC CẶP BỆNH ÁN NGHI VẤN TRÙNG LẶP"
-    ws3["A1"].font = Font(name="Times New Roman", bold=True, size=13, color="C00000")
-    ws3["A1"].alignment = center
-    ws3.append([])
-
-    if plagiarism:
-        hdrs3 = ["Sinh viên 1", "Sinh viên 2", "Mức độ", "Độ tương đồng (%)", "Chi tiết"]
-        ws3.append(hdrs3)
-        for col, h in enumerate(hdrs3, 1):
-            c = ws3.cell(row=3, column=col)
-            c.fill = PatternFill("solid", fgColor="C00000")
-            c.font = white_bold; c.alignment = center; c.border = bd
-        for p in plagiarism:
-            ws3.append([p["sv1"], p["sv2"], p["muc_do"], p["do_tuong_dong"],
-                        " | ".join(p.get("chi_tiet", []))])
-            ro = ws3.max_row
-            for col in range(1, 6):
-                c = ws3.cell(row=ro, column=col)
-                c.fill = PatternFill("solid", fgColor="FFF2CC")
-                c.font = normal; c.border = bd
-                c.alignment = center if col in [3,4] else left
-    else:
-        ws3.merge_cells("A3:E3")
-        ws3["A3"] = "✅ Không phát hiện trùng lặp đáng kể giữa các bệnh án"
-        ws3["A3"].font = Font(name="Times New Roman", size=12, color="2D7A4F")
-        ws3["A3"].alignment = center
-
-    ws3.column_dimensions["A"].width = 30
-    ws3.column_dimensions["B"].width = 30
-    ws3.column_dimensions["C"].width = 14
-    ws3.column_dimensions["D"].width = 18
-    ws3.column_dimensions["E"].width = 50
-
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
-    wb.save(tmp.name)
-    fname = f"KetQua_BenhAn_{datetime.now().strftime('%d%m%Y_%H%M')}.xlsx"
-    return FileResponse(tmp.name, filename=fname,
-                        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+@app.post("/gui-email-ket-qua")
+def gui_email_ket_qua(data: dict, user=Depends(get_current_user)):
+    """Gửi file Excel tổng hợp của một lần chấm tới email của người dùng.
+    Body: {"record_ids": [...], "plagiarism": [...]} – record_ids là "id" trả về từ /cham-nhieu."""
+    ids = data.get("record_ids") or []
+    if not isinstance(ids, list) or not ids:
+        raise HTTPException(400, "Không có kết quả nào để gửi.")
+    results = db.get_records(user["id"], ids[:500])
+    if not results:
+        raise HTTPException(404, "Không tìm thấy kết quả chấm.")
+    plagiarism = data.get("plagiarism") or []
+    if not isinstance(plagiarism, list):
+        plagiarism = []
+    when = now_vn().strftime("%H:%M %d/%m/%Y")
+    try:
+        email_service.send_results_email(
+            user["email"], user["ho_ten"], results, plagiarism,
+            build_excel(results, plagiarism), excel_filename(), when,
+        )
+    except EmailError as e:
+        raise HTTPException(502, f"Không gửi được email: {e}")
+    return {"message": f"Đã gửi file Excel kết quả tới {user['email']}", "email": user["email"]}
 
 STATIC_DIR = pathlib.Path(__file__).parent / "static"
 
@@ -444,4 +241,4 @@ def serve_frontend():
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "email": email_service.provider()}

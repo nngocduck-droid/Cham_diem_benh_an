@@ -278,19 +278,123 @@ tr:hover td { background:var(--gray-50); }
 .login-icon { font-size: 48px; margin-bottom: 16px; }
 .login-title { font-size: 22px; font-weight: 700; color: var(--gray-900); margin-bottom: 6px; }
 .login-sub { font-size: 13px; color: var(--gray-400); margin-bottom: 28px; }
-.login-input {
-  width: 100%; padding: 12px 16px; border: 1px solid var(--gray-300);
-  border-radius: 8px; font-size: 14px; font-family: Inter, sans-serif;
-  outline: none; margin-bottom: 12px; text-align: center; letter-spacing: 3px;
-}
-.login-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
 .login-btn {
-  width: 100%; padding: 13px; background: var(--primary); color: white;
+  width: 100%; padding: 12px; background: var(--primary); color: white;
   border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
   cursor: pointer; transition: all 0.2s; font-family: Inter, sans-serif;
 }
 .login-btn:hover { background: var(--primary-dark); }
-.login-error { color: var(--danger); font-size: 13px; margin-top: 10px; display: none; }
+.login-btn:disabled { opacity: .6; cursor: wait; }
+.login-screen { overflow-y: auto; padding: 24px 16px; align-items: flex-start; }
+.login-box { max-width: 100%; text-align: left; margin: auto; }
+.login-box .login-icon, .login-box .login-title, .login-box .login-sub { text-align: center; }
+.auth-view { display: none; }
+.auth-view.active { display: block; }
+.field { margin-bottom: 12px; }
+.field label { display: block; font-size: 12px; font-weight: 600; color: var(--gray-600); margin-bottom: 5px; }
+.field input {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--gray-300);
+  border-radius: 8px; font-size: 14px; font-family: Inter, sans-serif; outline: none; background: white;
+}
+.field input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+.field .hint { font-size: 11px; color: var(--gray-400); margin-top: 4px; }
+.auth-links { margin-top: 14px; font-size: 13px; color: var(--gray-500); text-align: center; line-height: 1.9; }
+.auth-links a, .link-btn { color: var(--primary); cursor: pointer; font-weight: 500; text-decoration: none; background: none; border: none; font: inherit; padding: 0; }
+.auth-links a:hover, .link-btn:hover { text-decoration: underline; }
+.auth-msg { font-size: 13px; padding: 10px 12px; border-radius: 8px; margin-bottom: 14px; display: none; line-height: 1.5; }
+.auth-msg.show { display: block; }
+.auth-msg.error { background: var(--danger-light); color: var(--danger); border: 1px solid #fca5a5; }
+.auth-msg.success { background: var(--success-light); color: var(--success); border: 1px solid #86efac; }
+.auth-msg.info { background: var(--primary-light); color: var(--primary-dark); border: 1px solid #bfdbfe; }
+.sent-icon { font-size: 44px; text-align: center; margin-bottom: 8px; }
+
+/* User box in sidebar */
+.sidebar-user {
+  border-top: 1px solid rgba(255,255,255,0.08); padding: 12px;
+  display: flex; align-items: center; gap: 10px;
+}
+.user-avatar {
+  width: 34px; height: 34px; border-radius: 50%; background: var(--primary); color: white;
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0;
+}
+.user-meta { flex: 1; min-width: 0; }
+.user-name { color: white; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-email { color: var(--gray-400); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.logout-btn { background: none; border: none; color: var(--gray-400); cursor: pointer; font-size: 16px; padding: 4px; border-radius: 6px; }
+.logout-btn:hover { color: white; background: rgba(255,255,255,0.08); }
+
+/* Account page */
+.account-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; align-items: start; }
+.panel-card { background: white; border-radius: var(--radius-lg); border: 1px solid var(--gray-200); box-shadow: var(--shadow-sm); }
+.panel-card .card-body .field input { max-width: 420px; }
+.info-row { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--gray-100); font-size: 13px; }
+.info-row:last-child { border-bottom: none; }
+.info-row span:first-child { color: var(--gray-500); }
+.info-row span:last-child { color: var(--gray-800); font-weight: 500; text-align: right; word-break: break-all; }
+.switch-row { display: flex; align-items: flex-start; gap: 12px; cursor: pointer; }
+.switch-row input { display: none; }
+.switch { width: 40px; height: 22px; border-radius: 11px; background: var(--gray-300); position: relative; flex-shrink: 0; transition: background .2s; margin-top: 1px; }
+.switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: white; transition: left .2s; box-shadow: var(--shadow-sm); }
+.switch-row input:checked + .switch { background: var(--primary); }
+.switch-row input:checked + .switch::after { left: 21px; }
+.switch-text { font-size: 13px; color: var(--gray-700); line-height: 1.5; }
+.switch-text small { display: block; color: var(--gray-400); font-size: 12px; }
+.inline-msg { font-size: 13px; margin-top: 10px; display: none; }
+.inline-msg.show { display: block; }
+.inline-msg.error { color: var(--danger); }
+.inline-msg.success { color: var(--success); }
+.email-status { padding: 10px 20px; font-size: 13px; border-bottom: 1px solid var(--gray-100); display: none; }
+.email-status.show { display: block; }
+.email-status.success { background: var(--success-light); color: var(--success); }
+.email-status.error { background: var(--danger-light); color: var(--danger); }
+.email-status.info { background: var(--primary-light); color: var(--primary-dark); }
+.alert-warning { background: var(--warning-light); border: 1px solid #fcd34d; color: var(--warning); }
+
+/* Admin */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--gray-200); margin-bottom: 20px; flex-wrap: wrap; }
+.tab { background: none; border: none; border-bottom: 2px solid transparent; padding: 10px 14px; font: 500 13px Inter, sans-serif; color: var(--gray-500); cursor: pointer; margin-bottom: -1px; }
+.tab:hover { color: var(--gray-800); }
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.admin-tab { display: none; }
+.admin-tab.active { display: block; }
+.toolbar { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; padding: 14px 20px; border-bottom: 1px solid var(--gray-100); }
+.toolbar .tf { display: flex; flex-direction: column; gap: 4px; }
+.toolbar label { font-size: 11px; font-weight: 600; color: var(--gray-500); text-transform: uppercase; letter-spacing: .4px; }
+.toolbar input, .toolbar select { padding: 7px 10px; border: 1px solid var(--gray-300); border-radius: 6px; font: 13px Inter, sans-serif; background: white; color: var(--gray-800); }
+.toolbar input:focus, .toolbar select:focus { outline: none; border-color: var(--primary); }
+.toolbar .switch-row, .toolbar .switch-row * { text-transform: none; letter-spacing: 0; }
+.toolbar .switch-text { font-size: 13px; font-weight: 400; color: var(--gray-700); }
+.table-scroll { overflow-x: auto; }
+.btn-xs { font: 500 12px Inter, sans-serif; padding: 4px 9px; border: 1px solid var(--gray-300); border-radius: 5px; background: white; color: var(--gray-700); cursor: pointer; white-space: nowrap; }
+.btn-xs:hover { background: var(--gray-50); }
+.btn-xs.danger { color: var(--danger); border-color: #fca5a5; }
+.btn-xs.danger:hover { background: var(--danger-light); }
+.btn-xs.primary { color: var(--primary); border-color: #bfdbfe; }
+.btn-xs.primary:hover { background: var(--primary-light); }
+.btn-xs:disabled { opacity: .5; cursor: default; }
+.actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.pill { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.pill-ok { background: var(--success-light); color: var(--success); }
+.pill-wait { background: var(--warning-light); color: var(--warning); }
+.pill-lock { background: var(--danger-light); color: var(--danger); }
+.pill-admin { background: #f5f3ff; color: #7c3aed; }
+.pill-root { background: #ede9fe; color: #5b21b6; }
+.pill-me { background: var(--gray-100); color: var(--gray-600); }
+.cell-sub { font-size: 12px; color: var(--gray-400); }
+.summary-line { padding: 10px 20px; font-size: 13px; color: var(--gray-600); border-bottom: 1px solid var(--gray-100); background: var(--gray-50); }
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 400; align-items: center; justify-content: center; padding: 16px; }
+.modal-bg.show { display: flex; }
+.modal { background: white; border-radius: 12px; width: 440px; max-width: 100%; box-shadow: var(--shadow-lg); }
+.modal-head { padding: 16px 20px; border-bottom: 1px solid var(--gray-100); font-weight: 600; font-size: 15px; }
+.modal-body { padding: 18px 20px; font-size: 13px; color: var(--gray-700); line-height: 1.6; }
+.modal-foot { padding: 12px 20px; border-top: 1px solid var(--gray-100); display: flex; justify-content: flex-end; gap: 8px; }
+.radio-row { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--gray-200); border-radius: 8px; margin-top: 10px; cursor: pointer; }
+.radio-row input { margin-top: 3px; }
+.radio-row small { display: block; color: var(--gray-400); }
+.plag-who { font-size: 11px; color: var(--gray-500); font-weight: 500; margin-top: 2px; }
+.note { font-size: 12px; color: var(--gray-500); line-height: 1.6; }
+.backup-grid { display: grid; grid-template-columns: minmax(260px, 1fr) 2fr; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .backup-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -300,11 +404,72 @@ tr:hover td { background:var(--gray-50); }
   <div class="login-box">
     <div class="login-icon">🏥</div>
     <div class="login-title">Chấm Điểm Bệnh Án</div>
-    <div class="login-sub">Nhập mật khẩu để tiếp tục</div>
-    <input type="password" class="login-input" id="loginInput" placeholder="••••••••"
-      onkeydown="if(event.key==='Enter') doLogin()">
-    <button class="login-btn" onclick="doLogin()">Đăng nhập</button>
-    <div class="login-error" id="loginError">Mật khẩu không đúng. Vui lòng thử lại.</div>
+    <div class="login-sub" id="authSub">Đăng nhập để tiếp tục</div>
+    <div class="auth-msg" id="authMsg"></div>
+
+    <!-- Đăng nhập -->
+    <form class="auth-view active" id="view-login" onsubmit="event.preventDefault(); doLogin()">
+      <div class="field"><label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" autocomplete="username" required></div>
+      <div class="field"><label for="loginPassword">Mật khẩu</label>
+        <input type="password" id="loginPassword" autocomplete="current-password" required></div>
+      <button class="login-btn" type="submit" id="btnLogin">Đăng nhập</button>
+      <div class="auth-links">
+        <a onclick="showAuthView('forgot')">Quên mật khẩu?</a><br>
+        Chưa có tài khoản? <a onclick="showAuthView('register')">Đăng ký</a>
+      </div>
+    </form>
+
+    <!-- Đăng ký -->
+    <form class="auth-view" id="view-register" onsubmit="event.preventDefault(); doRegister()">
+      <div class="field"><label for="regName">Họ và tên</label>
+        <input type="text" id="regName" autocomplete="name" maxlength="100" required></div>
+      <div class="field"><label for="regEmail">Email</label>
+        <input type="email" id="regEmail" autocomplete="email" required>
+        <div class="hint" id="regDomainHint">Link xác nhận sẽ được gửi tới email này.</div></div>
+      <div class="field"><label for="regPassword">Mật khẩu</label>
+        <input type="password" id="regPassword" autocomplete="new-password" minlength="8" required>
+        <div class="hint">Tối thiểu 8 ký tự.</div></div>
+      <div class="field"><label for="regPassword2">Nhập lại mật khẩu</label>
+        <input type="password" id="regPassword2" autocomplete="new-password" minlength="8" required></div>
+      <div class="field" id="regCodeField" style="display:none"><label for="regCode">Mã đăng ký</label>
+        <input type="text" id="regCode" autocomplete="off">
+        <div class="hint">Do quản trị viên cung cấp.</div></div>
+      <button class="login-btn" type="submit" id="btnRegister">Đăng ký</button>
+      <div class="auth-links">Đã có tài khoản? <a onclick="showAuthView('login')">Đăng nhập</a></div>
+    </form>
+
+    <!-- Đã gửi email xác nhận -->
+    <div class="auth-view" id="view-sent">
+      <div class="sent-icon">📧</div>
+      <p style="font-size:14px;color:var(--gray-700);line-height:1.6;text-align:center">
+        Chúng tôi đã gửi link xác nhận tới<br><strong id="sentEmail"></strong>.<br>
+        Mở email và bấm <strong>“Xác nhận email”</strong> để kích hoạt tài khoản.
+      </p>
+      <p style="font-size:12px;color:var(--gray-400);text-align:center;margin-top:8px">Không thấy email? Hãy kiểm tra mục Spam/Quảng cáo.</p>
+      <button class="login-btn" style="margin-top:18px;background:white;color:var(--primary);border:1px solid var(--primary)" id="btnResend" onclick="resendVerification()">Gửi lại email xác nhận</button>
+      <div class="auth-links"><a onclick="showAuthView('login')">← Quay lại đăng nhập</a></div>
+    </div>
+
+    <!-- Quên mật khẩu -->
+    <form class="auth-view" id="view-forgot" onsubmit="event.preventDefault(); doForgot()">
+      <p style="font-size:13px;color:var(--gray-500);margin-bottom:14px;line-height:1.6">Nhập email đã đăng ký. Chúng tôi sẽ gửi link để bạn đặt mật khẩu mới.</p>
+      <div class="field"><label for="forgotEmail">Email</label>
+        <input type="email" id="forgotEmail" autocomplete="email" required></div>
+      <button class="login-btn" type="submit" id="btnForgot">Gửi link đặt lại mật khẩu</button>
+      <div class="auth-links"><a onclick="showAuthView('login')">← Quay lại đăng nhập</a></div>
+    </form>
+
+    <!-- Đặt mật khẩu mới (mở từ link trong email) -->
+    <form class="auth-view" id="view-reset" onsubmit="event.preventDefault(); doResetPassword()">
+      <div class="field"><label for="resetPassword">Mật khẩu mới</label>
+        <input type="password" id="resetPassword" autocomplete="new-password" minlength="8" required>
+        <div class="hint">Tối thiểu 8 ký tự.</div></div>
+      <div class="field"><label for="resetPassword2">Nhập lại mật khẩu mới</label>
+        <input type="password" id="resetPassword2" autocomplete="new-password" minlength="8" required></div>
+      <button class="login-btn" type="submit" id="btnReset">Đặt mật khẩu mới</button>
+      <div class="auth-links"><a onclick="showAuthView('login')">← Quay lại đăng nhập</a></div>
+    </form>
   </div>
 </div>
 
@@ -316,21 +481,37 @@ tr:hover td { background:var(--gray-50); }
   </div>
   <nav class="nav">
     <div class="nav-label">Chính</div>
-    <div class="nav-item active" onclick="showPage('dashboard')">
+    <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
       <span class="icon">📊</span> Dashboard
     </div>
-    <div class="nav-item" onclick="showPage('upload')">
+    <div class="nav-item" data-page="upload" onclick="showPage('upload')">
       <span class="icon">📤</span> Chấm bệnh án
     </div>
     <div class="nav-label">Quản lý</div>
-    <div class="nav-item" onclick="showPage('history')">
+    <div class="nav-item" data-page="history" onclick="showPage('history')">
       <span class="icon">📋</span> Lịch sử chấm
     </div>
-    <div class="nav-item" id="navPlag" onclick="showPage('plagiarism')">
+    <div class="nav-item" id="navPlag" data-page="plagiarism" onclick="showPage('plagiarism')">
       <span class="icon">🔍</span> Kiểm tra đạo văn
       <span class="badge" id="plagBadge" style="display:none">!</span>
     </div>
+    <div class="nav-label">Cá nhân</div>
+    <div class="nav-item" data-page="account" onclick="showPage('account')">
+      <span class="icon">👤</span> Tài khoản
+    </div>
+    <div class="nav-item" id="navAdmin" data-page="admin" onclick="showPage('admin')" style="display:none">
+      <span class="icon">🛡️</span> Quản trị
+      <span class="badge" id="adminBadge" style="display:none;background:var(--warning)"></span>
+    </div>
   </nav>
+  <div class="sidebar-user">
+    <div class="user-avatar" id="userAvatar">?</div>
+    <div class="user-meta">
+      <div class="user-name" id="userName"></div>
+      <div class="user-email" id="userEmail"></div>
+    </div>
+    <button class="logout-btn" title="Đăng xuất" aria-label="Đăng xuất" onclick="logout()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+  </div>
 </div>
 
 <!-- Main -->
@@ -421,8 +602,12 @@ tr:hover td { background:var(--gray-50); }
         <div class="table-card">
           <div class="card-header">
             <div class="card-title" id="batchTitle">Kết quả chấm</div>
-            <button class="topbar-btn btn-primary" id="btnExport" onclick="xuatExcel()" style="font-size:12px;padding:6px 12px">⬇ Xuất Excel</button>
+            <div style="display:flex;gap:8px">
+              <button class="topbar-btn btn-outline" id="btnEmail" onclick="guiEmailKetQua(false)" style="font-size:12px;padding:6px 12px">✉ Gửi qua email</button>
+              <button class="topbar-btn btn-primary" id="btnExport" onclick="xuatExcel()" style="font-size:12px;padding:6px 12px">⬇ Xuất Excel</button>
+            </div>
           </div>
+          <div class="email-status" id="emailStatus"></div>
           <table>
             <thead><tr>
               <th>File</th><th>Bệnh nhân</th><th>Điểm</th><th>Xếp loại</th><th></th>
@@ -479,6 +664,170 @@ tr:hover td { background:var(--gray-50); }
       </div>
     </div>
 
+    <!-- ACCOUNT PAGE -->
+    <div class="page" id="page-account">
+      <div class="account-grid">
+        <div style="display:flex;flex-direction:column;gap:20px">
+          <div class="panel-card">
+            <div class="card-header"><div class="card-title">Thông tin tài khoản</div></div>
+            <div class="card-body">
+              <div class="info-row"><span>Họ và tên</span><span id="accName"></span></div>
+              <div class="info-row"><span>Email</span><span id="accEmail"></span></div>
+              <div class="info-row"><span>Ngày tạo</span><span id="accCreated"></span></div>
+            </div>
+          </div>
+          <div class="panel-card">
+            <div class="card-header"><div class="card-title">Email kết quả chấm</div></div>
+            <div class="card-body">
+              <label class="switch-row">
+                <input type="checkbox" id="accEmailResults" onchange="toggleEmailResults(this.checked)">
+                <span class="switch"></span>
+                <span class="switch-text">Tự động gửi file Excel tổng hợp qua email sau mỗi lần chấm
+                  <small>Gửi tới <span id="accEmail2"></span>. Bạn vẫn có thể bấm “Gửi qua email” bất cứ lúc nào.</small></span>
+              </label>
+              <div class="inline-msg" id="accPrefMsg"></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel-card">
+          <div class="card-header"><div class="card-title">Đổi mật khẩu</div></div>
+          <form class="card-body" onsubmit="event.preventDefault(); doChangePassword()">
+            <div class="field"><label for="pwOld">Mật khẩu hiện tại</label>
+              <input type="password" id="pwOld" autocomplete="current-password" required></div>
+            <div class="field"><label for="pwNew">Mật khẩu mới</label>
+              <input type="password" id="pwNew" autocomplete="new-password" minlength="8" required>
+              <div class="hint">Tối thiểu 8 ký tự.</div></div>
+            <div class="field"><label for="pwNew2">Nhập lại mật khẩu mới</label>
+              <input type="password" id="pwNew2" autocomplete="new-password" minlength="8" required></div>
+            <button class="topbar-btn btn-primary" type="submit" id="btnChangePw" style="padding:9px 18px">Đổi mật khẩu</button>
+            <div class="inline-msg" id="pwMsg"></div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN PAGE -->
+    <div class="page" id="page-admin">
+      <div class="tabs">
+        <button class="tab active" data-tab="users" onclick="adminTab('users')">👥 Người dùng</button>
+        <button class="tab" data-tab="records" onclick="adminTab('records')">📋 Lịch sử toàn hệ thống</button>
+        <button class="tab" data-tab="plag" onclick="adminTab('plag')">🔍 Đạo văn chéo</button>
+        <button class="tab" data-tab="backup" onclick="adminTab('backup')">💾 Sao lưu &amp; nhật ký</button>
+      </div>
+      <div class="alert" id="adminAlert"></div>
+
+      <!-- Tab: Người dùng -->
+      <div class="admin-tab active" id="atab-users">
+        <div class="stats-row">
+          <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-label">Người dùng</div><div class="stat-value" id="asTotal">—</div><div class="stat-sub" id="asAdmins"></div></div>
+          <div class="stat-card"><div class="stat-icon">⏳</div><div class="stat-label">Chờ xác nhận email</div><div class="stat-value" id="asPending">—</div><div class="stat-sub">chưa kích hoạt</div></div>
+          <div class="stat-card"><div class="stat-icon">🔒</div><div class="stat-label">Bị khoá</div><div class="stat-value" id="asLocked">—</div><div class="stat-sub">tài khoản</div></div>
+          <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-label">Bệnh án đã chấm</div><div class="stat-value" id="asRecords">—</div><div class="stat-sub" id="asToday"></div></div>
+        </div>
+        <div class="table-card">
+          <div class="card-header">
+            <div class="card-title">Tài khoản</div>
+            <button class="btn-xs" onclick="loadAdminUsers()">🔄 Làm mới</button>
+          </div>
+          <div class="toolbar">
+            <div class="tf"><label for="auSearch">Tìm</label><input id="auSearch" placeholder="Tên hoặc email" oninput="renderAdminUsers()" style="width:220px"></div>
+            <div class="tf"><label for="auStatus">Trạng thái</label>
+              <select id="auStatus" onchange="renderAdminUsers()">
+                <option value="">Tất cả</option><option value="hoat_dong">Đang hoạt động</option>
+                <option value="chua_xac_nhan">Chờ xác nhận</option><option value="bi_khoa">Bị khoá</option><option value="admin">Admin</option>
+              </select></div>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Người dùng</th><th>Trạng thái</th><th>Bệnh án</th><th>Đăng nhập gần nhất</th><th>Ngày tạo</th><th>Thao tác</th></tr></thead>
+              <tbody id="adminUsersTable"><tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:24px">Đang tải...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Lịch sử toàn hệ thống -->
+      <div class="admin-tab" id="atab-records">
+        <div class="table-card">
+          <div class="card-header">
+            <div class="card-title">Lịch sử chấm của tất cả người dùng</div>
+            <button class="topbar-btn btn-primary" onclick="adminExportExcel()" style="font-size:12px;padding:6px 12px">⬇ Xuất Excel</button>
+          </div>
+          <form class="toolbar" onsubmit="event.preventDefault(); loadAdminRecords()">
+            <div class="tf"><label for="arUser">Người chấm</label><select id="arUser" style="max-width:220px"><option value="">Tất cả</option></select></div>
+            <div class="tf"><label for="arFrom">Từ ngày</label><input type="date" id="arFrom"></div>
+            <div class="tf"><label for="arTo">Đến ngày</label><input type="date" id="arTo"></div>
+            <div class="tf"><label for="arMin">Điểm từ</label><input type="number" id="arMin" min="0" max="10" step="0.25" style="width:80px"></div>
+            <div class="tf"><label for="arMax">đến</label><input type="number" id="arMax" min="0" max="10" step="0.25" style="width:80px"></div>
+            <div class="tf"><label for="arQ">Tìm</label><input id="arQ" placeholder="File, bệnh nhân" style="width:170px"></div>
+            <button class="topbar-btn btn-primary" type="submit" style="padding:8px 14px">Lọc</button>
+            <button class="topbar-btn btn-outline" type="button" onclick="clearAdminFilters()" style="padding:8px 14px">Xoá lọc</button>
+          </form>
+          <div class="summary-line" id="arSummary">—</div>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Người chấm</th><th>File</th><th>Bệnh nhân</th><th>Điểm</th><th>Xếp loại</th><th>Thời gian</th><th></th></tr></thead>
+              <tbody id="adminRecordsTable"></tbody>
+            </table>
+          </div>
+        </div>
+        <p class="note" style="margin-top:10px">🔐 Kết quả chấm có thông tin bệnh nhân. Việc xem danh sách, xem chi tiết và xuất Excel đều được ghi vào nhật ký quản trị.</p>
+      </div>
+
+      <!-- Tab: Đạo văn chéo -->
+      <div class="admin-tab" id="atab-plag">
+        <div class="table-card" style="margin-bottom:16px">
+          <div class="card-header"><div class="card-title">Kiểm tra trùng lặp giữa các người chấm</div></div>
+          <form class="toolbar" onsubmit="event.preventDefault(); adminScanPlag()">
+            <div class="tf"><label for="apFrom">Từ ngày</label><input type="date" id="apFrom"></div>
+            <div class="tf"><label for="apTo">Đến ngày</label><input type="date" id="apTo"></div>
+            <label class="switch-row" style="align-self:center;margin:0 6px">
+              <input type="checkbox" id="apCross" checked><span class="switch"></span>
+              <span class="switch-text">Chỉ so giữa các người chấm khác nhau</span>
+            </label>
+            <button class="topbar-btn btn-primary" type="submit" style="padding:8px 14px">🔍 Quét</button>
+          </form>
+          <div class="card-body note">Phát hiện trường hợp một bệnh án (hoặc cùng một bệnh nhân) được nộp cho nhiều giảng viên khác nhau – điều mà mỗi người dùng không tự thấy được. Mỗi lần quét tối đa 1.500 bệnh án; với nhiều bệnh án hãy chọn khoảng thời gian (vd. một đợt thực tập).</div>
+        </div>
+        <div id="apResults"></div>
+      </div>
+
+      <!-- Tab: Sao lưu & nhật ký -->
+      <div class="admin-tab" id="atab-backup">
+        <div class="backup-grid">
+          <div class="panel-card">
+            <div class="card-header"><div class="card-title">Sao lưu dữ liệu</div></div>
+            <div class="card-body">
+              <p class="note" style="margin-bottom:12px">Tải về toàn bộ dữ liệu của app trong một file <strong>.db</strong> (SQLite): tài khoản (mật khẩu đã được mã hoá), lịch sử chấm và nhật ký quản trị. Nên tải định kỳ, ví dụ cuối mỗi đợt thực tập, và cất ở nơi an toàn vì file có thông tin bệnh nhân.</p>
+              <button class="topbar-btn btn-primary" onclick="adminBackup()" style="padding:9px 16px">⬇ Tải bản sao lưu (.db)</button>
+              <p class="note" style="margin-top:12px">Xem nội dung file bằng phần mềm miễn phí <em>DB Browser for SQLite</em>.</p>
+            </div>
+          </div>
+          <div class="panel-card" style="min-width:0">
+            <div class="card-header"><div class="card-title">Nhật ký quản trị</div><button class="btn-xs" onclick="loadAdminLog()">🔄 Làm mới</button></div>
+            <div class="table-scroll" style="max-height:520px;overflow-y:auto">
+              <table>
+                <thead><tr><th>Thời gian</th><th>Admin</th><th>Hành động</th><th>Đối tượng / chi tiết</th></tr></thead>
+                <tbody id="adminLogTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Modal xác nhận (admin) -->
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this) closeModal()">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head" id="modalTitle"></div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot">
+      <button class="topbar-btn btn-outline" onclick="closeModal()">Huỷ</button>
+      <button class="topbar-btn btn-primary" id="modalOk">Đồng ý</button>
+    </div>
   </div>
 </div>
 
@@ -506,45 +855,255 @@ let allHistory = [];
 let lastBatchResult = null;
 let lastPlagiarism = [];
 
-// ── Đăng nhập ──
-async function doLogin() {
-  const pw = document.getElementById('loginInput').value;
-  if (!pw) return;
-  try {
-    const res = await fetch(`${API}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pw })
-    });
-    if (res.ok) {
-      sessionStorage.setItem('auth', pw);
-      document.getElementById('loginScreen').style.display = 'none';
-    } else {
-      document.getElementById('loginError').style.display = 'block';
-      document.getElementById('loginInput').value = '';
-    }
-  } catch(e) {
-    document.getElementById('loginError').textContent = 'Không kết nối được server.';
-    document.getElementById('loginError').style.display = 'block';
-  }
+let currentUser = null;
+
+// ── Phiên đăng nhập (token lưu trong trình duyệt) ──
+function getToken() { try { return localStorage.getItem('token') || ''; } catch(e) { return window._token || ''; } }
+function setToken(t) {
+  window._token = t;
+  try { t ? localStorage.setItem('token', t) : localStorage.removeItem('token'); } catch(e) {}
 }
 
-// Kiểm tra đã đăng nhập chưa
-if (sessionStorage.getItem('auth')) {
+class ApiError extends Error {
+  constructor(status, message) { super(message); this.status = status; }
+}
+
+// Gọi API kèm token. Hết phiên (401) → quay về màn hình đăng nhập.
+async function apiFetch(path, opts = {}, { auth = true } = {}) {
+  const headers = { ...(opts.headers || {}) };
+  if (opts.json !== undefined) {
+    headers['Content-Type'] = 'application/json';
+    opts = { ...opts, body: JSON.stringify(opts.json) };
+    delete opts.json;
+  }
+  if (auth && getToken()) headers['Authorization'] = 'Bearer ' + getToken();
+  let res;
+  try {
+    res = await fetch(`${API}${path}`, { ...opts, headers });
+  } catch(e) {
+    throw new ApiError(0, 'Không kết nối được server. Vui lòng kiểm tra mạng và thử lại.');
+  }
+  if (res.status === 401 && auth) {
+    const d = await res.json().catch(() => ({}));
+    logout(d.detail || 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+    throw new ApiError(401, d.detail || 'Chưa đăng nhập');
+  }
+  if (!res.ok) {
+    const d = await res.json().catch(() => ({}));
+    let msg = d.detail || `Lỗi server (${res.status})`;
+    if (Array.isArray(msg)) msg = 'Dữ liệu không hợp lệ';
+    throw new ApiError(res.status, msg);
+  }
+  return res;
+}
+async function apiJson(path, opts, flags) { return (await apiFetch(path, opts, flags)).json(); }
+
+// ── Màn hình đăng nhập / đăng ký ──
+const authSubs = {
+  login: 'Đăng nhập để tiếp tục', register: 'Tạo tài khoản mới', sent: 'Xác nhận email',
+  forgot: 'Quên mật khẩu', reset: 'Đặt mật khẩu mới'
+};
+function showAuthView(name, keepMsg) {
+  document.querySelectorAll('.auth-view').forEach(v => v.classList.toggle('active', v.id === 'view-' + name));
+  document.getElementById('authSub').textContent = authSubs[name] || '';
+  if (!keepMsg) authMsg('');
+  if (name === 'register') loadRegisterConfig();
+  const first = document.querySelector(`#view-${name} input`);
+  if (first) setTimeout(() => first.focus(), 50);
+}
+function authMsg(text, type = 'error') {
+  const el = document.getElementById('authMsg');
+  el.textContent = text;
+  el.className = 'auth-msg' + (text ? ` show ${type}` : '');
+}
+function setBusy(btnId, busy, busyText) {
+  const b = document.getElementById(btnId);
+  if (!b) return;
+  if (busy) { b.dataset.label = b.textContent; b.textContent = busyText || 'Đang xử lý...'; b.disabled = true; }
+  else { b.textContent = b.dataset.label || b.textContent; b.disabled = false; }
+}
+function showLoginScreen() {
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+function enterApp(user) {
+  currentUser = user;
+  renderUser();
   document.getElementById('loginScreen').style.display = 'none';
+  loadHistory();
+}
+
+let registerConfigLoaded = false;
+async function loadRegisterConfig() {
+  if (registerConfigLoaded) return;
+  try {
+    const cfg = await apiJson('/cau-hinh', {}, { auth: false });
+    registerConfigLoaded = true;
+    document.getElementById('regCodeField').style.display = cfg.can_ma_dang_ky ? 'block' : 'none';
+    document.getElementById('regCode').required = !!cfg.can_ma_dang_ky;
+    if ((cfg.ten_mien_cho_phep || []).length)
+      document.getElementById('regDomainHint').textContent = 'Chỉ chấp nhận email: @' + cfg.ten_mien_cho_phep.join(', @');
+  } catch(e) {}
+}
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!email || !password) return;
+  setBusy('btnLogin', true, 'Đang đăng nhập...');
+  try {
+    const data = await apiJson('/login', { method: 'POST', json: { email, password } }, { auth: false });
+    setToken(data.token);
+    document.getElementById('loginPassword').value = '';
+    authMsg('');
+    enterApp(data.user);
+  } catch(e) {
+    if (e.status === 403) {
+      // Chưa xác nhận email
+      document.getElementById('sentEmail').textContent = email;
+      showAuthView('sent');
+      authMsg(e.message, 'info');
+    } else {
+      authMsg(e.message);
+    }
+  } finally { setBusy('btnLogin', false); }
+}
+
+async function doRegister() {
+  const ho_ten = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const mat_khau = document.getElementById('regPassword').value;
+  const mat_khau2 = document.getElementById('regPassword2').value;
+  const ma_dang_ky = document.getElementById('regCode').value.trim();
+  if (mat_khau !== mat_khau2) { authMsg('Hai mật khẩu không khớp.'); return; }
+  setBusy('btnRegister', true, 'Đang đăng ký...');
+  try {
+    const data = await apiJson('/dang-ky', { method: 'POST', json: { ho_ten, email, mat_khau, ma_dang_ky } }, { auth: false });
+    document.getElementById('sentEmail').textContent = data.email || email;
+    document.getElementById('loginEmail').value = data.email || email;
+    ['regPassword','regPassword2'].forEach(id => document.getElementById(id).value = '');
+    showAuthView('sent');
+  } catch(e) {
+    authMsg(e.message);
+    if (e.status === 502) { document.getElementById('sentEmail').textContent = email; }
+  } finally { setBusy('btnRegister', false); }
+}
+
+async function resendVerification() {
+  const email = document.getElementById('sentEmail').textContent.trim();
+  if (!email) { showAuthView('login'); return; }
+  setBusy('btnResend', true, 'Đang gửi...');
+  try {
+    const data = await apiJson('/gui-lai-xac-nhan', { method: 'POST', json: { email } }, { auth: false });
+    authMsg(data.message, 'success');
+  } catch(e) { authMsg(e.message); }
+  finally { setBusy('btnResend', false); }
+}
+
+async function doForgot() {
+  const email = document.getElementById('forgotEmail').value.trim();
+  if (!email) return;
+  setBusy('btnForgot', true, 'Đang gửi...');
+  try {
+    const data = await apiJson('/quen-mat-khau', { method: 'POST', json: { email } }, { auth: false });
+    document.getElementById('loginEmail').value = email;
+    showAuthView('login');
+    authMsg(data.message, 'success');
+  } catch(e) { authMsg(e.message); }
+  finally { setBusy('btnForgot', false); }
+}
+
+let resetToken = '';
+async function doResetPassword() {
+  const p1 = document.getElementById('resetPassword').value;
+  const p2 = document.getElementById('resetPassword2').value;
+  if (p1 !== p2) { authMsg('Hai mật khẩu không khớp.'); return; }
+  setBusy('btnReset', true);
+  try {
+    const data = await apiJson('/dat-lai-mat-khau', { method: 'POST', json: { token: resetToken, mat_khau_moi: p1 } }, { auth: false });
+    resetToken = '';
+    setToken(data.token);
+    enterApp(data.user);
+    showToastAlert('✅ ' + data.message);
+  } catch(e) { authMsg(e.message); }
+  finally { setBusy('btnReset', false); }
+}
+
+function logout(message) {
+  setToken('');
+  currentUser = null;
+  allHistory = []; lastBatchResult = null; lastPlagiarism = [];
+  document.getElementById('batchResults').style.display = 'none';
+  resetAdminState();
+  if (document.getElementById('page-admin').classList.contains('active')) showPage('dashboard');
+  document.getElementById('navAdmin').style.display = 'none';
+  showLoginScreen();
+  showAuthView('login');
+  if (message) authMsg(message, 'info');
+}
+
+function renderUser() {
+  if (!currentUser) return;
+  const name = currentUser.ho_ten || currentUser.email;
+  const initials = name.trim().split(/\s+/).slice(-2).map(w => w[0]).join('').toUpperCase();
+  document.getElementById('userAvatar').textContent = initials || '?';
+  document.getElementById('userName').textContent = name;
+  document.getElementById('userEmail').textContent = currentUser.email;
+  document.getElementById('accName').textContent = currentUser.ho_ten;
+  document.getElementById('accEmail').textContent = currentUser.email;
+  document.getElementById('accEmail2').textContent = currentUser.email;
+  document.getElementById('accCreated').textContent = formatDate(currentUser.created_at);
+  document.getElementById('accEmailResults').checked = !!currentUser.email_ket_qua;
+  document.getElementById('navAdmin').style.display = currentUser.la_admin ? 'flex' : 'none';
+  if (currentUser.la_admin) refreshAdminBadge();
+}
+function formatDate(s) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || '');
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : (s || '—');
+}
+
+// ── Trang Tài khoản ──
+function inlineMsg(id, text, type) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'inline-msg' + (text ? ` show ${type}` : '');
+}
+async function doChangePassword() {
+  const mat_khau_cu = document.getElementById('pwOld').value;
+  const mat_khau_moi = document.getElementById('pwNew').value;
+  if (mat_khau_moi !== document.getElementById('pwNew2').value) { inlineMsg('pwMsg', 'Hai mật khẩu mới không khớp.', 'error'); return; }
+  setBusy('btnChangePw', true);
+  try {
+    const data = await apiJson('/doi-mat-khau', { method: 'POST', json: { mat_khau_cu, mat_khau_moi } });
+    setToken(data.token);
+    ['pwOld','pwNew','pwNew2'].forEach(id => document.getElementById(id).value = '');
+    inlineMsg('pwMsg', '✅ ' + data.message, 'success');
+  } catch(e) { if (e.status !== 401) inlineMsg('pwMsg', e.message, 'error'); }
+  finally { setBusy('btnChangePw', false); }
+}
+async function toggleEmailResults(on) {
+  try {
+    currentUser = await apiJson('/toi', { method: 'PUT', json: { email_ket_qua: on } });
+    renderUser();
+    inlineMsg('accPrefMsg', on ? '✅ Đã bật tự động gửi email.' : 'Đã tắt tự động gửi email.', 'success');
+  } catch(e) {
+    document.getElementById('accEmailResults').checked = !on;
+    if (e.status !== 401) inlineMsg('accPrefMsg', e.message, 'error');
+  }
 }
 
 // ── Navigation ──
 function showPage(name) {
+  if (!document.getElementById('page-' + name)) name = 'dashboard';
+  if (name === 'admin' && !currentUser?.la_admin) name = 'dashboard';
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === name));
   document.getElementById('page-' + name).classList.add('active');
-  const titles = { dashboard:'Dashboard', upload:'Chấm bệnh án', history:'Lịch sử chấm', plagiarism:'Kiểm tra đạo văn' };
+  const titles = { dashboard:'Dashboard', upload:'Chấm bệnh án', history:'Lịch sử chấm', plagiarism:'Kiểm tra đạo văn', account:'Tài khoản', admin:'Quản trị' };
   document.getElementById('topbarTitle').textContent = titles[name] || '';
-  const navMap = { dashboard:0, upload:1, history:2, plagiarism:3 };
-  document.querySelectorAll('.nav-item')[navMap[name]]?.classList.add('active');
   if (name === 'history') renderHistory();
   if (name === 'dashboard') renderDashboard();
+  if (name === 'account') { renderUser(); inlineMsg('pwMsg', '', ''); inlineMsg('accPrefMsg', '', ''); }
+  if (name === 'admin') openAdmin();
 }
 
 // ── File handling ──
@@ -568,7 +1127,7 @@ function renderFileList() {
   list.innerHTML = selectedFiles.map((f,i) => `
     <div class="file-item">
       <span>📄</span>
-      <span class="fname">${f.name}</span>
+      <span class="fname">${esc(f.name)}</span>
       <span class="fremove" onclick="removeFile(${i})">✕</span>
     </div>`).join('');
   document.getElementById('btnGrade').disabled = selectedFiles.length === 0;
@@ -581,6 +1140,8 @@ function removeFile(i) { selectedFiles.splice(i,1); renderFileList(); }
 async function chamNhieu() {
   if (!selectedFiles.length) return;
   hideAlert();
+  emailStatus('', '');
+  document.getElementById('plagWarning').style.display = 'none';
 
   const allResults = [];
   const allErrors = [];
@@ -593,16 +1154,11 @@ async function chamNhieu() {
     form.append('files', file);
 
     try {
-      const res = await fetch(`${API}/cham-nhieu`, { method: 'POST', body: form });
-      if (!res.ok) {
-        const e = await res.json().catch(() => ({ detail: 'Lỗi server' }));
-        allErrors.push({ file: file.name, loi: e.detail || 'Lỗi không xác định' });
-        continue;
-      }
-      const data = await res.json();
+      const data = await apiJson('/cham-nhieu', { method: 'POST', body: form });
       allResults.push(...(data.results || []));
       allErrors.push(...(data.errors || []));
     } catch(e) {
+      if (e.status === 401) { hideLoading(); return; }
       allErrors.push({ file: file.name, loi: e.message });
     }
   }
@@ -612,8 +1168,7 @@ async function chamNhieu() {
   if (allResults.length > 1) {
     try {
       showLoading('Đang kiểm tra đạo văn...', '');
-      const res = await fetch(`${API}/kiem-tra-dao-van`, { method: 'POST' });
-      const data = await res.json();
+      const data = await apiJson('/kiem-tra-dao-van', { method: 'POST' });
       plagiarism = data.pairs || [];
     } catch(e) {}
   }
@@ -634,6 +1189,33 @@ async function chamNhieu() {
   if (allErrors.length) {
     showAlert(`⚠️ ${allErrors.length} file lỗi: ${allErrors.map(e => e.file).join(', ')}`, 'warning');
   }
+
+  // Tự động gửi file Excel tổng hợp qua email (nếu người dùng bật trong Tài khoản)
+  if (allResults.length && currentUser?.email_ket_qua) {
+    await guiEmailKetQua(true);
+  } else if (allResults.length) {
+    emailStatus('Tự động gửi email đang tắt (bật trong trang Tài khoản). Bấm “✉ Gửi qua email” nếu cần.', 'info');
+  }
+}
+
+// ── Gửi file Excel kết quả qua email ──
+function emailStatus(text, type) {
+  const el = document.getElementById('emailStatus');
+  el.textContent = text;
+  el.className = 'email-status' + (text ? ` show ${type}` : '');
+}
+async function guiEmailKetQua(auto) {
+  const ids = (lastBatchResult?.results || []).map(r => r.id).filter(Boolean);
+  if (!ids.length) return;
+  const btn = document.getElementById('btnEmail');
+  btn.disabled = true;
+  emailStatus(`✉️ Đang gửi file Excel kết quả tới ${currentUser?.email || 'email của bạn'}...`, 'info');
+  try {
+    const data = await apiJson('/gui-email-ket-qua', { method: 'POST', json: { record_ids: ids, plagiarism: lastPlagiarism } });
+    emailStatus(`✅ ${data.message}${auto ? ' (tự động)' : ''}.`, 'success');
+  } catch(e) {
+    if (e.status !== 401) emailStatus(`⚠️ ${e.message}`, 'error');
+  } finally { btn.disabled = false; }
 }
 
 function renderBatchResults(data) {
@@ -641,10 +1223,10 @@ function renderBatchResults(data) {
   tbody.innerHTML = (data.results || []).map((r, idx) => {
     const bn = r.benh_nhan || {};
     return `<tr>
-      <td style="font-weight:500">${r.ten_file}</td>
-      <td>${bn.ho_ten || '—'}</td>
-      <td><span class="badge-score ${scoreClass(r.tong_diem)}">${r.tong_diem?.toFixed(2)}</span></td>
-      <td><span class="rank-pill" style="${rankStyle(r.xep_loai)}">${r.xep_loai}</span></td>
+      <td style="font-weight:500">${esc(r.ten_file)}</td>
+      <td>${esc(bn.ho_ten || '—')}</td>
+      <td><span class="badge-score ${scoreClass(r.tong_diem)}">${fmtScore(r.tong_diem)}</span></td>
+      <td><span class="rank-pill" style="${rankStyle(r.xep_loai)}">${esc(r.xep_loai)}</span></td>
       <td><button onclick='openPanelByIndex("batch",${idx})' style="font-size:12px;padding:4px 10px;border:1px solid var(--gray-300);border-radius:5px;cursor:pointer;background:white">Chi tiết</button></td>
     </tr>`;
   }).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:24px">Không có kết quả</td></tr>';
@@ -658,7 +1240,7 @@ function renderBatchResults(data) {
     const pw = document.getElementById('plagWarning');
     pw.style.display = 'block';
     document.getElementById('plagWarningList').innerHTML = data.plagiarism.map(p =>
-      `<div style="margin-bottom:4px">• <strong>${p.sv1}</strong> ↔ <strong>${p.sv2}</strong>: ${p.muc_do} (${p.do_tuong_dong}% tương đồng)</div>`
+      `<div style="margin-bottom:4px">• <strong>${esc(p.sv1)}</strong> ↔ <strong>${esc(p.sv2)}</strong>: ${esc(p.muc_do)} (${p.do_tuong_dong}% tương đồng)</div>`
     ).join('');
   }
 }
@@ -666,8 +1248,7 @@ function renderBatchResults(data) {
 // ── History ──
 async function loadHistory() {
   try {
-    const res = await fetch(`${API}/lich-su`);
-    allHistory = await res.json();
+    allHistory = await apiJson('/lich-su');
     renderDashboard();
     renderHistory();
   } catch(e) { console.error(e); }
@@ -682,13 +1263,13 @@ function renderHistory() {
   tbody.innerHTML = [...allHistory].reverse().map((r, idx) => {
     const bn = r.benh_nhan || {};
     return `<tr>
-      <td style="font-weight:500;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.ten_file}</td>
-      <td>${bn.ho_ten || '—'}</td>
-      <td>${bn.tuoi || '—'}</td>
-      <td>${bn.gioi || '—'}</td>
-      <td><span class="badge-score ${scoreClass(r.tong_diem)}">${r.tong_diem?.toFixed(2)}</span></td>
-      <td><span class="rank-pill" style="${rankStyle(r.xep_loai)}">${r.xep_loai}</span></td>
-      <td style="color:var(--gray-400);font-size:12px">${r.thoi_gian}</td>
+      <td style="font-weight:500;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.ten_file)}</td>
+      <td>${esc(bn.ho_ten || '—')}</td>
+      <td>${esc(bn.tuoi || '—')}</td>
+      <td>${esc(bn.gioi || '—')}</td>
+      <td><span class="badge-score ${scoreClass(r.tong_diem)}">${fmtScore(r.tong_diem)}</span></td>
+      <td><span class="rank-pill" style="${rankStyle(r.xep_loai)}">${esc(r.xep_loai)}</span></td>
+      <td style="color:var(--gray-400);font-size:12px">${esc(r.thoi_gian)}</td>
       <td><button onclick='openPanelByIndex("history",${idx})' style="font-size:12px;padding:4px 10px;border:1px solid var(--gray-300);border-radius:5px;cursor:pointer;background:white">Chi tiết</button></td>
     </tr>`;
   }).join('');
@@ -712,19 +1293,19 @@ function renderDashboard() {
   tbody.innerHTML = recent.map((r, idx) => {
     const bn = r.benh_nhan || {};
     return `<tr>
-      <td style="font-weight:500">${r.ten_file}</td>
-      <td>${bn.ho_ten || '—'}</td>
-      <td><span class="badge-score ${scoreClass(r.tong_diem)}">${r.tong_diem?.toFixed(2)}</span></td>
-      <td><span class="rank-pill" style="${rankStyle(r.xep_loai)}">${r.xep_loai}</span></td>
-      <td style="color:var(--gray-400);font-size:12px">${r.thoi_gian}</td>
+      <td style="font-weight:500">${esc(r.ten_file)}</td>
+      <td>${esc(bn.ho_ten || '—')}</td>
+      <td><span class="badge-score ${scoreClass(r.tong_diem)}">${fmtScore(r.tong_diem)}</span></td>
+      <td><span class="rank-pill" style="${rankStyle(r.xep_loai)}">${esc(r.xep_loai)}</span></td>
+      <td style="color:var(--gray-400);font-size:12px">${esc(r.thoi_gian)}</td>
       <td><button onclick='openPanelByIndex("dashboard",${idx})' style="font-size:12px;padding:4px 10px;border:1px solid var(--gray-300);border-radius:5px;cursor:pointer;background:white">Chi tiết</button></td>
     </tr>`;
   }).join('');
 }
 
 async function xoaLichSu() {
-  if (!confirm('Bạn có chắc muốn xoá toàn bộ lịch sử chấm điểm?')) return;
-  await fetch(`${API}/lich-su`, { method:'DELETE' });
+  if (!confirm('Bạn có chắc muốn xoá toàn bộ lịch sử chấm điểm của bạn?')) return;
+  try { await apiFetch('/lich-su', { method:'DELETE' }); } catch(e) { return; }
   allHistory = [];
   renderHistory();
   renderDashboard();
@@ -734,8 +1315,7 @@ async function xoaLichSu() {
 async function kiemTraDaoVan() {
   showLoading('Đang kiểm tra đạo văn...', 'So sánh tất cả cặp bệnh án trong lịch sử');
   try {
-    const res = await fetch(`${API}/kiem-tra-dao-van`, { method:'POST' });
-    const data = await res.json();
+    const data = await apiJson('/kiem-tra-dao-van', { method:'POST' });
     renderPlagiarism(data.pairs || []);
     document.getElementById('statPlag').textContent = (data.pairs||[]).length;
     if ((data.pairs||[]).length > 0) document.getElementById('plagBadge').style.display = 'inline';
@@ -757,14 +1337,14 @@ function renderPlagiarism(pairs) {
     pairs.map(p => `
     <div class="plag-card">
       <div class="plag-pair">
-        <div class="plag-name">📄 ${p.sv1}</div>
+        <div class="plag-name">📄 ${esc(p.sv1)}</div>
         <div class="plag-vs">↔</div>
-        <div class="plag-name">📄 ${p.sv2}</div>
-        <span class="plag-level ${p.do_tuong_dong > 75 ? 'plag-high':'plag-med'}">${p.muc_do}</span>
+        <div class="plag-name">📄 ${esc(p.sv2)}</div>
+        <span class="plag-level ${p.do_tuong_dong > 75 ? 'plag-high':'plag-med'}">${esc(p.muc_do)}</span>
       </div>
       <div style="font-size:12px;color:var(--gray-500);margin-bottom:8px">Độ tương đồng nội dung: <strong>${p.do_tuong_dong}%</strong></div>
       <div class="plag-details">
-        ${p.chi_tiet.map(d => `<div class="plag-detail-item">⚠ ${d}</div>`).join('')}
+        ${p.chi_tiet.map(d => `<div class="plag-detail-item">⚠ ${esc(d)}</div>`).join('')}
       </div>
     </div>`).join('');
 }
@@ -775,14 +1355,13 @@ async function xuatExcel() {
   showLoading('Đang tạo file Excel...', '');
   try {
     const payload = { results: lastBatchResult.results, plagiarism: lastPlagiarism };
-    const res = await fetch(`${API}/xuat-excel-nhieu`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
-    if (!res.ok) throw new Error('Lỗi xuất file');
+    const res = await apiFetch('/xuat-excel-nhieu', { method:'POST', json: payload });
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href=url;
     a.download = `KetQua_BenhAn_${new Date().toLocaleDateString('vi').replace(/\//g,'')}.xlsx`;
     a.click(); URL.revokeObjectURL(url);
-  } catch(e) { showAlert('Lỗi xuất Excel: ' + e.message, 'danger'); }
+  } catch(e) { if (e.status !== 401) showAlert('Lỗi xuất Excel: ' + e.message, 'danger'); }
   finally { hideLoading(); }
 }
 
@@ -793,40 +1372,42 @@ function openPanel(r) {
   document.getElementById('panelBody').innerHTML = `
     <div class="panel-score-row">
       <div>
-        <div class="panel-score-num">${r.tong_diem?.toFixed(2)}</div>
+        <div class="panel-score-num">${fmtScore(r.tong_diem)}</div>
         <div class="panel-score-label">/ 10 điểm</div>
       </div>
       <div style="text-align:right">
-        <div class="panel-rank">${r.xep_loai}</div>
-        <div style="color:rgba(255,255,255,0.6);font-size:11px;margin-top:6px">${r.thoi_gian||''}</div>
+        <div class="panel-rank">${esc(r.xep_loai)}</div>
+        <div style="color:rgba(255,255,255,0.6);font-size:11px;margin-top:6px">${esc(r.thoi_gian||'')}</div>
       </div>
     </div>
+    ${r.nguoi_cham ? `<div class="section-title">Người chấm</div>
+    <div class="comment-box" style="margin-bottom:16px"><p>🧑‍⚕️ ${esc(r.nguoi_cham)}${r.email_nguoi_cham ? ` &nbsp;·&nbsp; ${esc(r.email_nguoi_cham)}` : ''}</p></div>` : ''}
     <div class="section-title">Thông tin bệnh nhân</div>
     <div class="comment-box" style="margin-bottom:16px">
-      <p>👤 ${bn.ho_ten||'—'} &nbsp;|&nbsp; 🎂 ${bn.tuoi||'—'} tuổi &nbsp;|&nbsp; ${bn.gioi||'—'} &nbsp;|&nbsp; Mã: ${bn.ma_benh_nhan||'—'}</p>
+      <p>👤 ${esc(bn.ho_ten||'—')} &nbsp;|&nbsp; 🎂 ${esc(bn.tuoi||'—')} tuổi &nbsp;|&nbsp; ${esc(bn.gioi||'—')} &nbsp;|&nbsp; Mã: ${esc(bn.ma_benh_nhan||'—')}</p>
     </div>
     <div class="section-title">Điểm chi tiết</div>
     ${(r.chi_tiet||[]).map(item => {
       const pct = item.diem_toi_da > 0 ? Math.round(item.diem_dat/item.diem_toi_da*100) : 0;
       return `<div class="detail-row">
-        <div class="detail-num">${item.stt}</div>
+        <div class="detail-num">${esc(item.stt)}</div>
         <div class="detail-info">
-          <div class="detail-name">${item.ten_muc}</div>
-          <div class="detail-comment">${item.nhan_xet}</div>
+          <div class="detail-name">${esc(item.ten_muc)}</div>
+          <div class="detail-comment">${esc(item.nhan_xet)}</div>
           <div class="mini-bar"><div class="mini-fill" style="width:${pct}%"></div></div>
         </div>
-        <div class="detail-score">${item.diem_dat?.toFixed(2)}<span style="font-size:11px;color:var(--gray-400)">/${item.diem_toi_da}</span></div>
+        <div class="detail-score">${fmtScore(item.diem_dat)}<span style="font-size:11px;color:var(--gray-400)">/${esc(item.diem_toi_da)}</span></div>
       </div>`;
     }).join('')}
     <div class="section-title">Nhận xét tổng thể</div>
-    <div class="comment-box"><p>${r.nhan_xet_chung||'—'}</p></div>
+    <div class="comment-box"><p>${esc(r.nhan_xet_chung||'—')}</p></div>
     ${(r.cac_phan_can_sua||[]).length > 0 ? `
     <div class="section-title" style="color:#dc2626">Các phần cần sửa</div>
     <div style="display:flex;flex-direction:column;gap:6px">
       ${(r.cac_phan_can_sua||[]).map((s,i) => `
       <div style="display:flex;align-items:flex-start;gap:8px;background:#fef2f2;border:1px solid #fca5a5;border-radius:6px;padding:9px 12px">
         <span style="color:#dc2626;font-weight:700;font-size:12px;flex-shrink:0;margin-top:1px">${i+1}.</span>
-        <span style="font-size:13px;color:#7f1d1d;line-height:1.5">${s}</span>
+        <span style="font-size:13px;color:#7f1d1d;line-height:1.5">${esc(s)}</span>
       </div>`).join('')}
     </div>` : ''}
   `;
@@ -890,10 +1471,386 @@ function openPanelByIndex(source, idx) {
   if (r) openPanel(r);
 }
 
-// Init
-const savedPage = sessionStorage.getItem('currentPage');
-if (savedPage) { sessionStorage.removeItem('currentPage'); showPage(savedPage); }
-loadHistory();
+// ══════════ QUẢN TRỊ ══════════
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+function fmtScore(v) { const n = Number(v); return isFinite(n) ? n.toFixed(2) : '—'; }
+function formatDateTime(s) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(s || '');
+  return m ? `${m[4]}:${m[5]} ${m[3]}/${m[2]}/${m[1]}` : (s || '');
+}
+function fieldVal(id) { return document.getElementById(id).value.trim(); }
+
+let adminUsers = [];
+let adminCurrentTab = 'users';
+let adminRecordsLoaded = false;
+
+function resetAdminState() {
+  adminUsers = []; adminRecordsLoaded = false; adminCurrentTab = 'users';
+  document.getElementById('adminBadge').style.display = 'none';
+  document.getElementById('apResults').innerHTML = '';
+  document.getElementById('adminRecordsTable').innerHTML = '';
+  document.getElementById('adminLogTable').innerHTML = '';
+}
+
+function adminAlert(text, type = 'success') {
+  const el = document.getElementById('adminAlert');
+  el.textContent = text;
+  el.className = 'alert' + (text ? ` alert-${type} show` : '');
+  clearTimeout(adminAlert._t);
+  if (text && type === 'success') adminAlert._t = setTimeout(() => adminAlert(''), 6000);
+}
+
+function openAdmin() { adminTab(adminCurrentTab); }
+
+async function adminTab(name) {
+  adminCurrentTab = name;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.toggle('active', t.id === 'atab-' + name));
+  adminAlert('');
+  if (name === 'users') loadAdminUsers();
+  if (name === 'records') {
+    if (!adminUsers.length) await loadAdminUsers();
+    if (!adminRecordsLoaded) loadAdminRecords();
+  }
+  if (name === 'backup') loadAdminLog();
+}
+
+function setAdminBadge(n) {
+  const b = document.getElementById('adminBadge');
+  b.textContent = n; b.title = `${n} tài khoản chờ xác nhận email`;
+  b.style.display = n > 0 ? 'inline' : 'none';
+}
+async function refreshAdminBadge() {
+  try { setAdminBadge((await apiJson('/admin/tong-quan')).chua_xac_nhan); } catch(e) {}
+}
+
+// ── Người dùng ──
+async function loadAdminUsers() {
+  try {
+    const [users, st] = await Promise.all([apiJson('/admin/nguoi-dung'), apiJson('/admin/tong-quan')]);
+    adminUsers = users;
+    document.getElementById('asTotal').textContent = st.tong_nguoi_dung;
+    document.getElementById('asAdmins').textContent = `${st.hoat_dong} đang hoạt động · ${st.so_admin} admin`;
+    document.getElementById('asPending').textContent = st.chua_xac_nhan;
+    document.getElementById('asLocked').textContent = st.bi_khoa;
+    document.getElementById('asRecords').textContent = st.tong_benh_an;
+    document.getElementById('asToday').textContent = `${st.benh_an_hom_nay} bệnh án hôm nay`;
+    setAdminBadge(st.chua_xac_nhan);
+    renderAdminUsers();
+    fillGraderSelect();
+  } catch(e) { if (e.status !== 401) adminAlert(e.message, 'danger'); }
+}
+
+function statusPill(u) {
+  if (u.trang_thai === 'bi_khoa') return '<span class="pill pill-lock">🔒 Bị khoá</span>';
+  if (u.trang_thai === 'chua_xac_nhan') return '<span class="pill pill-wait">⏳ Chờ xác nhận</span>';
+  return '<span class="pill pill-ok">● Hoạt động</span>';
+}
+function xsBtn(label, onclick, cls = '') { return `<button class="btn-xs ${cls}" onclick="${onclick}">${label}</button>`; }
+
+function userActions(u) {
+  if (u.la_ban_than) return '<span class="cell-sub">Tài khoản của bạn</span>';
+  const meRoot = !!currentUser?.la_admin_goc;
+  const canManage = !u.la_admin_goc && (!u.la_admin || meRoot);
+  const b = [];
+  if (u.trang_thai === 'chua_xac_nhan') b.push(xsBtn('✅ Xác nhận email', `adminVerify(${u.id})`, 'primary'));
+  if (u.trang_thai !== 'bi_khoa')
+    b.push(xsBtn(u.trang_thai === 'chua_xac_nhan' ? '✉ Gửi lại link xác nhận' : '✉ Gửi link đặt lại mật khẩu', `adminSendLink(${u.id})`));
+  if (canManage)
+    b.push(u.trang_thai === 'bi_khoa' ? xsBtn('🔓 Mở khoá', `adminLock(${u.id}, false)`, 'primary')
+                                      : xsBtn('🔒 Khoá', `adminLock(${u.id}, true)`, 'danger'));
+  if (meRoot && !u.la_admin_goc) {
+    if (u.la_admin) b.push(xsBtn('Thu quyền admin', `adminSetAdmin(${u.id}, false)`));
+    else if (u.trang_thai === 'hoat_dong') b.push(xsBtn('⭐ Cấp quyền admin', `adminSetAdmin(${u.id}, true)`));
+  }
+  if (canManage) b.push(xsBtn('🗑 Xoá', `adminDelete(${u.id})`, 'danger'));
+  return b.join('') || '<span class="cell-sub">—</span>';
+}
+
+function renderAdminUsers() {
+  const q = fieldVal('auSearch').toLowerCase();
+  const st = fieldVal('auStatus');
+  const rows = adminUsers.filter(u =>
+    (!q || `${u.ho_ten} ${u.email}`.toLowerCase().includes(q)) &&
+    (!st || (st === 'admin' ? u.la_admin : u.trang_thai === st)));
+  const tb = document.getElementById('adminUsersTable');
+  if (!rows.length) {
+    tb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:24px">Không có tài khoản nào</td></tr>';
+    return;
+  }
+  tb.innerHTML = rows.map(u => `<tr>
+    <td><div style="font-weight:600;color:var(--gray-800)">${esc(u.ho_ten)}</div><div class="cell-sub">${esc(u.email)}</div></td>
+    <td><div style="display:flex;gap:4px;flex-wrap:wrap">${statusPill(u)}${u.la_admin_goc ? '<span class="pill pill-root">Admin gốc</span>' : u.la_admin ? '<span class="pill pill-admin">Admin</span>' : ''}</div></td>
+    <td>${u.so_benh_an ?? 0}${u.lan_cham_gan_nhat ? `<div class="cell-sub">gần nhất ${esc(formatDateTime(u.lan_cham_gan_nhat))}</div>` : ''}</td>
+    <td>${u.last_login_at ? esc(formatDateTime(u.last_login_at)) : '<span class="cell-sub">Chưa đăng nhập</span>'}</td>
+    <td>${esc(formatDate(u.created_at))}</td>
+    <td><div class="actions">${userActions(u)}</div></td>
+  </tr>`).join('');
+}
+
+function findAdminUser(id) { return adminUsers.find(u => u.id === id) || { ho_ten: '', email: '', so_benh_an: 0 }; }
+function userLabel(u) { return `<b>${esc(u.ho_ten)}</b> (${esc(u.email)})`; }
+
+async function adminDo(path, opts) {
+  try {
+    const d = await apiJson(path, opts);
+    adminAlert('✅ ' + (d.message || 'Đã thực hiện.'));
+    await loadAdminUsers();
+    adminRecordsLoaded = false;
+  } catch(e) { if (e.status !== 401) adminAlert(e.message, 'danger'); }
+}
+
+function adminVerify(id) {
+  const u = findAdminUser(id);
+  confirmModal('Xác nhận email thay người dùng',
+    `Kích hoạt tài khoản ${userLabel(u)} mà không cần họ bấm link trong email?
+     <div class="note" style="margin-top:8px">Dùng khi email xác nhận bị rơi vào Spam hoặc bị máy chủ email của trường chặn. Chỉ làm khi bạn chắc chắn email này đúng là của người đó.</div>`,
+    'Xác nhận email', () => adminDo(`/admin/nguoi-dung/${id}/xac-nhan`, { method: 'POST' }));
+}
+function adminSendLink(id) {
+  const u = findAdminUser(id);
+  const verify = u.trang_thai === 'chua_xac_nhan';
+  confirmModal(verify ? 'Gửi lại email xác nhận' : 'Gửi link đặt lại mật khẩu',
+    verify ? `Gửi lại email có link xác nhận tới ${userLabel(u)}?`
+           : `Gửi email có link đặt lại mật khẩu (hiệu lực 60 phút) tới ${userLabel(u)}?
+              <div class="note" style="margin-top:8px">Dùng khi người dùng quên mật khẩu mà không tự yêu cầu được. Mật khẩu hiện tại vẫn dùng được cho tới khi họ đặt mật khẩu mới.</div>`,
+    'Gửi email', () => adminDo(`/admin/nguoi-dung/${id}/gui-link`, { method: 'POST' }));
+}
+function adminLock(id, khoa) {
+  const u = findAdminUser(id);
+  confirmModal(khoa ? 'Khoá tài khoản' : 'Mở khoá tài khoản',
+    khoa ? `Khoá tài khoản ${userLabel(u)}?
+            <div class="note" style="margin-top:8px">Người dùng bị đăng xuất ngay và không đăng nhập được cho tới khi được mở khoá. Lịch sử chấm vẫn được giữ nguyên.</div>`
+         : `Mở khoá tài khoản ${userLabel(u)}? Người dùng sẽ đăng nhập lại được bằng mật khẩu cũ.`,
+    khoa ? 'Khoá' : 'Mở khoá',
+    () => adminDo(`/admin/nguoi-dung/${id}/khoa`, { method: 'POST', json: { khoa } }), khoa ? 'danger' : 'primary');
+}
+function adminSetAdmin(id, cap) {
+  const u = findAdminUser(id);
+  confirmModal(cap ? 'Cấp quyền admin' : 'Thu quyền admin',
+    cap ? `Cấp quyền admin cho ${userLabel(u)}?
+           <div class="note" style="margin-top:8px">Admin xem được lịch sử chấm của mọi người (có thông tin bệnh nhân), quản lý tài khoản thường và tải bản sao lưu. Chỉ admin gốc mới cấp/thu quyền admin.</div>`
+        : `Thu quyền admin của ${userLabel(u)}? Tài khoản trở về người dùng thường.`,
+    cap ? 'Cấp quyền' : 'Thu quyền',
+    () => adminDo(`/admin/nguoi-dung/${id}/quyen-admin`, { method: 'POST', json: { admin: cap } }));
+}
+function adminDelete(id) {
+  const u = findAdminUser(id);
+  const n = u.so_benh_an || 0;
+  confirmModal('Xoá tài khoản',
+    `Xoá tài khoản ${userLabel(u)}? Thao tác này <b>không hoàn tác được</b>.
+     <label class="radio-row"><input type="radio" name="delMode" value="keep" checked>
+       <span>Giữ lại ${n} bệnh án đã chấm<small>Vẫn xem được trong “Lịch sử toàn hệ thống”, người chấm ghi là “(đã xoá)”.</small></span></label>
+     <label class="radio-row"><input type="radio" name="delMode" value="all">
+       <span>Xoá luôn ${n} bệnh án đã chấm<small>Không khôi phục được nếu không có bản sao lưu.</small></span></label>
+     <div class="note" style="margin-top:10px">Nếu chỉ muốn tạm ngừng tài khoản, hãy dùng <b>Khoá</b>.</div>`,
+    'Xoá tài khoản', () => {
+      const keep = document.querySelector('input[name=delMode]:checked')?.value !== 'all';
+      return adminDo(`/admin/nguoi-dung/${id}?giu_lich_su=${keep}`, { method: 'DELETE' });
+    }, 'danger');
+}
+
+// ── Hộp thoại xác nhận ──
+function confirmModal(title, html, okLabel, onOk, variant = 'primary') {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').innerHTML = html;
+  const ok = document.getElementById('modalOk');
+  ok.textContent = okLabel;
+  ok.className = 'topbar-btn ' + (variant === 'danger' ? 'btn-danger' : 'btn-primary');
+  ok.disabled = false;
+  ok.onclick = async () => { ok.disabled = true; try { await onOk(); } finally { closeModal(); } };
+  document.getElementById('modalBg').classList.add('show');
+  setTimeout(() => ok.focus(), 50);
+}
+function closeModal() { document.getElementById('modalBg').classList.remove('show'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closePanel(); } });
+
+// ── Lịch sử toàn hệ thống ──
+function fillGraderSelect() {
+  const sel = document.getElementById('arUser');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Tất cả người chấm</option>' +
+    adminUsers.map(u => `<option value="${u.id}">${esc(u.ho_ten)} (${esc(u.email)})</option>`).join('') +
+    '<option value="khac">Không còn tài khoản / lịch sử cũ</option>';
+  sel.value = cur;
+}
+function adminFilterParams() {
+  const p = new URLSearchParams();
+  [['arUser','user_id'], ['arFrom','tu_ngay'], ['arTo','den_ngay'], ['arMin','diem_tu'], ['arMax','diem_den'], ['arQ','q']]
+    .forEach(([id, key]) => { const v = fieldVal(id); if (v) p.set(key, v); });
+  return p.toString();
+}
+function clearAdminFilters() {
+  ['arUser','arFrom','arTo','arMin','arMax','arQ'].forEach(id => document.getElementById(id).value = '');
+  loadAdminRecords();
+}
+async function loadAdminRecords() {
+  const tb = document.getElementById('adminRecordsTable');
+  const sum = document.getElementById('arSummary');
+  tb.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray-400);padding:24px">Đang tải...</td></tr>';
+  try {
+    const d = await apiJson('/admin/lich-su?' + adminFilterParams());
+    adminRecordsLoaded = true;
+    sum.textContent = `${d.tong_so} bệnh án` +
+      (d.diem_tb != null ? ` · điểm TB ${fmtScore(d.diem_tb)} · đạt (≥ 5): ${d.ti_le_dat}%` : '') +
+      (d.hien_thi < d.tong_so ? ` · đang hiện ${d.hien_thi} bệnh án mới nhất – xuất Excel để xem đủ` : '');
+    tb.innerHTML = d.records.length ? d.records.map(r => {
+      const bn = r.benh_nhan || {};
+      return `<tr>
+        <td><div style="font-weight:500">${esc(r.nguoi_cham)}</div><div class="cell-sub">${esc(r.email_nguoi_cham)}</div></td>
+        <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(r.ten_file)}">${esc(r.ten_file)}</td>
+        <td>${esc(bn.ho_ten || '—')}<div class="cell-sub">${esc([bn.tuoi, bn.gioi].filter(Boolean).join(' · '))}</div></td>
+        <td><span class="badge-score ${scoreClass(Number(r.tong_diem))}">${fmtScore(r.tong_diem)}</span></td>
+        <td><span class="rank-pill" style="${rankStyle(r.xep_loai)}">${esc(r.xep_loai)}</span></td>
+        <td style="color:var(--gray-400);font-size:12px;white-space:nowrap">${esc(r.thoi_gian)}</td>
+        <td><button class="btn-xs" onclick="adminOpenRecord(${Number(r.id)})">Chi tiết</button></td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">Không có bệnh án nào khớp bộ lọc</div></div></td></tr>';
+  } catch(e) {
+    tb.innerHTML = '';
+    if (e.status !== 401) adminAlert(e.message, 'danger');
+  }
+}
+async function adminOpenRecord(id) {
+  showLoading('Đang tải bệnh án...', '');
+  try { openPanel(await apiJson(`/admin/lich-su/${id}`)); }
+  catch(e) { if (e.status !== 401) adminAlert(e.message, 'danger'); }
+  finally { hideLoading(); }
+}
+async function downloadResponse(res, fallbackName) {
+  const m = /filename="?([^";]+)"?/.exec(res.headers.get('Content-Disposition') || '');
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = m ? m[1] : fallbackName;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+async function adminExportExcel() {
+  showLoading('Đang tạo file Excel...', 'Tổng hợp theo bộ lọc hiện tại');
+  try { await downloadResponse(await apiFetch('/admin/xuat-excel?' + adminFilterParams()), 'TongHop_ToanHeThong.xlsx'); }
+  catch(e) { if (e.status !== 401) adminAlert(e.message, 'danger'); }
+  finally { hideLoading(); }
+}
+
+// ── Đạo văn chéo ──
+async function adminScanPlag() {
+  const body = { tu_ngay: fieldVal('apFrom'), den_ngay: fieldVal('apTo'), chi_khac_nguoi_cham: document.getElementById('apCross').checked };
+  showLoading('Đang quét đạo văn chéo...', 'So sánh từng cặp bệnh án – có thể mất 1–2 phút khi có nhiều bệnh án');
+  try { renderAdminPlag(await apiJson('/admin/dao-van-cheo', { method: 'POST', json: body })); }
+  catch(e) { if (e.status !== 401) adminAlert(e.message, 'danger'); }
+  finally { hideLoading(); }
+}
+function renderAdminPlag(d) {
+  const el = document.getElementById('apResults');
+  if (!d.pairs.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">Không phát hiện trùng lặp</div>
+      <div class="empty-sub">Đã so sánh ${d.so_benh_an} bệnh án</div></div>`;
+    return;
+  }
+  el.innerHTML = `<div style="margin-bottom:16px;font-size:13px;color:var(--danger);font-weight:600">⚠️ ${d.tong_cap} cặp nghi vấn trong ${d.so_benh_an} bệnh án (quét ${d.thoi_gian_quet} giây)${d.tong_cap > d.pairs.length ? ` – hiển thị ${d.pairs.length} cặp nghiêm trọng nhất` : ''}</div>` +
+    d.pairs.map(p => `
+    <div class="plag-card">
+      <div class="plag-pair">
+        <div class="plag-name">📄 ${esc(p.sv1)}<div class="plag-who">👤 ${esc(p.nguoi_cham_1)} · ${esc(p.thoi_gian_1)}</div></div>
+        <div class="plag-vs">↔</div>
+        <div class="plag-name">📄 ${esc(p.sv2)}<div class="plag-who">👤 ${esc(p.nguoi_cham_2)} · ${esc(p.thoi_gian_2)}</div></div>
+        <span class="plag-level ${String(p.muc_do).includes('Rất cao') ? 'plag-high' : 'plag-med'}">${esc(p.muc_do)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <div style="font-size:12px;color:var(--gray-500)">Độ tương đồng nhận xét: <strong>${Number(p.do_tuong_dong)}%</strong></div>
+        <div class="actions"><button class="btn-xs" onclick="adminOpenRecord(${Number(p.id1)})">Xem bệnh án 1</button><button class="btn-xs" onclick="adminOpenRecord(${Number(p.id2)})">Xem bệnh án 2</button></div>
+      </div>
+      <div class="plag-details">${(p.chi_tiet || []).map(c => `<div class="plag-detail-item">⚠ ${esc(c)}</div>`).join('')}</div>
+    </div>`).join('');
+}
+
+// ── Sao lưu & nhật ký ──
+async function adminBackup() {
+  showLoading('Đang tạo bản sao lưu...', '');
+  try {
+    await downloadResponse(await apiFetch('/admin/sao-luu'), 'benh_an_saoluu.db');
+    adminAlert('✅ Đã tải bản sao lưu. Hãy cất file ở nơi an toàn vì có thông tin bệnh nhân.');
+    loadAdminLog();
+  } catch(e) { if (e.status !== 401) adminAlert(e.message, 'danger'); }
+  finally { hideLoading(); }
+}
+const ADMIN_ACTIONS = {
+  khoa: '🔒 Khoá tài khoản', mo_khoa: '🔓 Mở khoá tài khoản', xac_nhan_email: '✅ Xác nhận email thay',
+  gui_link_dat_lai: '✉️ Gửi link đặt lại mật khẩu', gui_link_xac_nhan: '✉️ Gửi lại link xác nhận',
+  cap_quyen_admin: '⭐ Cấp quyền admin', thu_quyen_admin: 'Thu quyền admin', xoa_tai_khoan: '🗑 Xoá tài khoản',
+  xem_lich_su: '👁 Xem lịch sử toàn hệ thống', xem_chi_tiet: '👁 Xem chi tiết bệnh án',
+  xuat_excel: '⬇ Xuất Excel toàn hệ thống', dao_van_cheo: '🔍 Quét đạo văn chéo', sao_luu: '💾 Tải bản sao lưu'
+};
+async function loadAdminLog() {
+  const tb = document.getElementById('adminLogTable');
+  try {
+    const rows = await apiJson('/admin/nhat-ky?limit=300');
+    tb.innerHTML = rows.length ? rows.map(r => `<tr>
+      <td style="white-space:nowrap;font-size:12px;color:var(--gray-500)">${esc(formatDateTime(r.created_at))}</td>
+      <td style="font-size:12px">${esc(r.admin_email || '')}</td>
+      <td style="white-space:nowrap">${esc(ADMIN_ACTIONS[r.action] || r.action)}</td>
+      <td>${esc(r.target || '')}${r.detail ? `<div class="cell-sub">${esc(r.detail)}</div>` : ''}</td>
+    </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--gray-400);padding:24px">Chưa có hoạt động nào</td></tr>';
+  } catch(e) { if (e.status !== 401) adminAlert(e.message, 'danger'); }
+}
+
+// ── Thông báo nhỏ góc màn hình ──
+function showToastAlert(text) {
+  const t = document.createElement('div');
+  t.textContent = text;
+  t.style.cssText = 'position:fixed;right:20px;bottom:20px;z-index:2000;background:#111827;color:white;padding:12px 16px;border-radius:8px;font-size:13px;box-shadow:0 10px 15px rgba(0,0,0,.2);max-width:360px;line-height:1.5';
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 5000);
+}
+
+// ── Khởi động ──
+async function init() {
+  try { sessionStorage.removeItem('auth'); } catch(e) {}  // khoá đăng nhập kiểu cũ
+  const params = new URLSearchParams(location.search);
+  const verifyToken = params.get('verify_token');
+  const urlResetToken = params.get('reset_token');
+  if (verifyToken || urlResetToken) history.replaceState(null, '', location.pathname);
+
+  // Mở từ link xác nhận email
+  if (verifyToken) {
+    showLoginScreen();
+    showAuthView('login');
+    authMsg('Đang xác nhận email...', 'info');
+    try {
+      const data = await apiJson('/xac-nhan-email', { method: 'POST', json: { token: verifyToken } }, { auth: false });
+      if (data.token) {
+        setToken(data.token);
+        enterApp(data.user);
+        showToastAlert('✅ ' + data.message);
+        return;
+      }
+      authMsg(data.message, 'success');
+    } catch(e) { authMsg(e.message); }
+    return;
+  }
+
+  // Mở từ link đặt lại mật khẩu
+  if (urlResetToken) {
+    resetToken = urlResetToken;
+    showLoginScreen();
+    showAuthView('reset');
+    return;
+  }
+
+  if (!getToken()) { showLoginScreen(); showAuthView('login'); return; }
+  try {
+    const user = await apiJson('/toi');
+    enterApp(user);
+    const savedPage = sessionStorage.getItem('currentPage');
+    if (savedPage) { sessionStorage.removeItem('currentPage'); showPage(savedPage); }
+  } catch(e) {
+    if (e.status !== 401) { showLoginScreen(); showAuthView('login'); authMsg(e.message); }
+  }
+}
+init();
 </script>
 </body>
 </html>

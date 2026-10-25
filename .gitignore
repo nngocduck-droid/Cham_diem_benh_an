@@ -2,3 +2,9 @@ backend/.env
 backend/lich_su_cham.json
 __pycache__/
 *.pyc
+# CSDL tài khoản & khoá bí mật (không đưa lên GitHub)
+*.db
+*.db-wal
+*.db-shm
+.secret_key
+.DS_Store
